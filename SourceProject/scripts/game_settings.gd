@@ -117,6 +117,7 @@ func load_settings() -> void:
 
 func save_settings() -> void:
 	var config := ConfigFile.new()
+	config.load(SETTINGS_PATH)
 	config.set_value("player", "avatar_id", selected_avatar_id)
 	config.set_value("player", "name", player_name)
 	config.set_value("player", "profile_completed", player_profile_completed)
