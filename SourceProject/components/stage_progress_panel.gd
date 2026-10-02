@@ -2,6 +2,7 @@ class_name StageProgressPanel
 extends Control
 
 signal closed(next_stage: int, next_mission: int)
+signal badges_requested
 
 const PANEL_TEXTURE := preload("res://assets/pics/ui/level.png")
 const PASSED_MISSION_TEXTURE := preload("res://assets/pics/ui/passlevel.png")
@@ -103,7 +104,8 @@ func refresh() -> void:
 		add_text("MissionTitle%d" % number, str(missions[mission_index]), Vector2(centers[mission_index].x - 127, 588) + MISSION_TITLE_VERTICAL_CORRECTION, Vector2(254, 68), 28, HORIZONTAL_ALIGNMENT_CENTER, true)
 	var next_stage := stage_number
 	var next_mission := ProgressStore.get_next_mission(stage_number)
-	if next_mission == 0 and stage_number < GameContent.STAGES.size():
+	var stage_completed := next_mission == 0
+	if stage_completed and stage_number < GameContent.STAGES.size():
 		next_stage += 1
 		next_mission = 1
 	var action := Button.new()
@@ -111,14 +113,14 @@ func refresh() -> void:
 	action.flat = true
 	action.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	action.text_direction = Control.TEXT_DIRECTION_RTL
-	action.text = GameContent.get_mission_title(next_stage, next_mission) if next_mission > 0 else "پایان بازی"
+	action.text = "ادامه..." if stage_completed else GameContent.get_mission_title(next_stage, next_mission)
 	action.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	action.add_theme_color_override("font_color", Color.WHITE)
 	action.add_theme_font_size_override("font_size", roundi(36 * panel_scale))
-	if next_mission > 0:
+	if not stage_completed:
 		action.pressed.connect(close_and_continue.bind(next_stage, next_mission))
 	else:
-		action.disabled = true
+		action.pressed.connect(show_badges)
 	content.add_child(action)
 	action.position = scale_position(Vector2(605, 735))
 	action.size = scale_position(Vector2(465, 75))
@@ -170,3 +172,6 @@ func close_and_continue(next_stage: int, next_mission: int) -> void:
 	close_tween.tween_property(panel, "position", hidden_position, 0.28)
 	close_tween.tween_property(content, "position", hidden_position, 0.28)
 	close_tween.chain().tween_callback(func() -> void: closed.emit(next_stage, next_mission))
+
+func show_badges() -> void:
+	badges_requested.emit()

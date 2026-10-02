@@ -14,6 +14,7 @@ var settings_panel: SettingsPanel
 var stage_progress_panel: StageProgressPanel
 var badges_panel: BadgesPanel
 var hint_available := false
+var return_to_map_after_badges := false
 
 func _ready() -> void:
 	layer = 20
@@ -29,6 +30,8 @@ func _ready() -> void:
 	stage_progress_panel.closed.connect(_on_stage_progress_closed)
 	badges_panel = BADGES_PANEL_SCENE.instantiate()
 	add_child(badges_panel)
+	badges_panel.closed.connect(_on_badges_panel_closed)
+	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
 	get_tree().scene_changed.connect(_on_scene_changed)
 	call_deferred("refresh_hint_availability")
 
@@ -40,7 +43,17 @@ func _on_menu_action_requested(action_id: String) -> void:
 	elif action_id == "stage":
 		open_stage_progress()
 	elif action_id == "badges":
-		badges_panel.open_badges()
+		open_badges()
+
+func open_badges(return_to_map_on_close := false) -> void:
+	return_to_map_after_badges = return_to_map_on_close
+	badges_panel.open_badges()
+
+func _on_badges_panel_closed() -> void:
+	if not return_to_map_after_badges:
+		return
+	return_to_map_after_badges = false
+	get_tree().change_scene_to_file(MAP_SCENE)
 
 func _on_hint_confirmed() -> void:
 	hint_requested.emit()
@@ -60,6 +73,10 @@ func _on_stage_progress_closed(next_stage: int, next_mission: int) -> void:
 		get_tree().change_scene_to_file(LEVEL_1_SCENE)
 	else:
 		get_tree().change_scene_to_file(MAP_SCENE)
+
+func _on_stage_badges_requested() -> void:
+	stage_progress_panel.hide()
+	open_badges(true)
 
 func _on_scene_changed(_scene: Node) -> void:
 	refresh_hint_availability()

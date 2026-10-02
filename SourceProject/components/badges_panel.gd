@@ -5,6 +5,7 @@ signal closed
 
 const BACKGROUND_TEXTURE := preload("res://assets/pics/ui/menu-blank.png")
 const LOCKED_BADGE_SHADER := preload("res://shaders/badge_locked.gdshader")
+const CLOSE_TEXTURE := preload("res://assets/pics/ui/close.png")
 const DESIGN_SIZE := Vector2(1672, 941)
 # The badge artwork is larger than the shared 1280x720 UI canvas. Keep its
 # authored coordinates, then fit it to that same canvas as the global menu.
@@ -60,7 +61,6 @@ func build_page() -> void:
 	content.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(content)
 	add_label("Title", "نشان‌ها", Vector2(570, 67), Vector2(532, 76), 50, Color("f5deb0"))
-	add_label("Subtitle", "نشان‌های به‌دست‌آمده در مسیر یادگیری", Vector2(470, 140), Vector2(732, 45), 26, Color("d1e9f2"))
 	add_close_button()
 	build_badges()
 	refresh_badges()
@@ -103,7 +103,7 @@ func build_badges() -> void:
 		badge.size = Vector2(216, 216)
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		badge_grid.add_child(badge)
-		var caption := add_badge_label("BadgeTitle%d" % stage_number, str(badge_data.get("title", "")), center + Vector2(-132, 115), Vector2(264, 45), 25, Color("eff6ff"))
+		var caption := add_badge_label("BadgeTitle%d" % stage_number, str(badge_data.get("title", "")), center + Vector2(-132, 80), Vector2(264, 45), 25, Color("eff6ff"))
 		caption.tooltip_text = "مرحله %s" % to_persian_digits(stage_number)
 
 func refresh_badges() -> void:
@@ -149,18 +149,15 @@ func add_label(node_name: String, text_value: String, position_value: Vector2, s
 	return label
 
 func add_close_button() -> void:
-	var button := Button.new()
+	var button := TextureButton.new()
 	button.name = "CloseButton"
 	button.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	button.text_direction = Control.TEXT_DIRECTION_RTL
-	button.text = "بازگشت"
-	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	button.position = Vector2(1412, 82)
-	button.size = Vector2(132, 46)
-	button.add_theme_font_size_override("font_size", 20)
-	button.add_theme_color_override("font_color", Color("eff6ff"))
-	button.add_theme_stylebox_override("normal", make_button_style(Color("25445e"), Color("78bed0")))
-	button.add_theme_stylebox_override("hover", make_button_style(Color("31617a"), Color("a1e1ed")))
+	button.texture_normal = CLOSE_TEXTURE
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.position = Vector2(1440, 66)
+	button.size = Vector2(76, 76)
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
 	button.pressed.connect(close_badges)
 	content.add_child(button)
 
@@ -179,14 +176,6 @@ func add_badge_label(node_name: String, text_value: String, position_value: Vect
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	badge_grid.add_child(label)
 	return label
-
-func make_button_style(background_color: Color, border_color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = background_color
-	style.border_color = border_color
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(14)
-	return style
 
 func close_badges() -> void:
 	hide()

@@ -55,6 +55,7 @@ func _ready() -> void:
 	dialogue_panel.dismiss_requested.connect(_on_dialogue_dismiss_requested)
 	phone_message_overlay.closed.connect(_on_phone_message_closed)
 	stage_progress_panel.closed.connect(_on_stage_progress_closed)
+	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
 	GameSettings.background_music_changed.connect(_on_background_music_changed)
 	pan_zoom_viewport.world_tapped.connect(_on_world_tapped)
 	level_image.texture = GameSettings.get_level_texture(str(level_data.get("background_asset", "")), level_id)
@@ -670,6 +671,10 @@ func _on_stage_progress_closed(next_stage: int, next_mission: int) -> void:
 	mission_advance_requested.emit(next_stage, next_mission)
 	if next_stage == int(level_data.get("stage", 0)):
 		get_tree().reload_current_scene()
+
+func _on_stage_badges_requested() -> void:
+	stage_progress_panel.hide()
+	GlobalMenu.open_badges(true)
 
 func show_monitor_app_from_rect() -> void:
 	var app := TextureRect.new()
