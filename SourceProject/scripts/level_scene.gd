@@ -11,6 +11,7 @@ const CHECK_ICON := preload("res://assets/pics/ui/check.png")
 const DOCUMENT_ICON := preload("res://assets/pics/ui/document.png")
 const NOTEPAD_TEXTURE := preload("res://assets/pics/ui/notepad.png")
 const COUNTDOWN_SCENE := preload("res://components/countdown.tscn")
+const BACKGROUND_MUSIC := preload("res://assets/sounds/music1.mp3")
 const PRESENTATION_PATH_GAME_SCRIPT := preload("res://components/presentation_path_game.gd")
 const MARS_PRESENTATION_TEXTURE := preload("res://assets/pics/ui/mars-presentation.png")
 const CHAT_BUTTON_COLOR := Color("3badae")
@@ -26,7 +27,9 @@ const CHAT_BUTTON_DONE_COLOR := Color("6fae9c")
 @onready var dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var phone_message_overlay: PhoneMessageOverlay = $PhoneMessageOverlay
 @onready var notification_sound: AudioStreamPlayer = $NotificationSound
+@onready var background_music: AudioStreamPlayer = $BackgroundMusic
 @onready var laptop_sound: AudioStreamPlayer = $LaptopSound
+@onready var player_typing_sound: AudioStreamPlayer = $PlayerTypingSound
 @onready var stage_progress_panel: StageProgressPanel = $StageProgressPanel
 
 var level_data: Dictionary
@@ -45,6 +48,13 @@ var all_monitor_tools_read := false
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	background_music.stream = BACKGROUND_MUSIC
+	var background_music_stream := background_music.stream as AudioStreamMP3
+	if background_music_stream != null:
+		background_music_stream.loop = true
+	var typing_stream := player_typing_sound.stream as AudioStreamMP3
+	if typing_stream != null:
+		typing_stream.loop = true
 	GlobalMenu.set_hint_available(true)
 	if not GlobalMenu.hint_requested.is_connected(_on_hint_requested):
 		GlobalMenu.hint_requested.connect(_on_hint_requested)
@@ -60,6 +70,7 @@ func _ready() -> void:
 	stage_progress_panel.closed.connect(_on_stage_progress_closed)
 	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
 	GameSettings.background_music_changed.connect(_on_background_music_changed)
+	_sync_background_music()
 	pan_zoom_viewport.world_tapped.connect(_on_world_tapped)
 	level_image.texture = GameSettings.get_level_texture(str(level_data.get("background_asset", "")), level_id)
 	var stage_number := int(level_data.get("stage", 0))
@@ -170,7 +181,7 @@ func show_scripted_monitor_chat(chat_data: Dictionary) -> void:
 			response_box.text = "..."
 			await get_tree().create_timer(thinking_delay).timeout
 			response_box.text = ""
-		await type_chat_text(target_box, str(step.get("text", "")), character_delay)
+		await type_chat_text(target_box, str(step.get("text", "")), character_delay, not is_assistant)
 		var thinking_after_delay := float(step.get("thinking_after_delay", 0.0))
 		if thinking_after_delay > 0.0:
 			response_box.text = "..."
@@ -254,7 +265,7 @@ func show_intro_monitor_chat(chat_data: Dictionary) -> void:
 	var hint_tween := send_hint.create_tween().set_loops()
 	hint_tween.tween_property(send_hint, "modulate:a", 0.2, 0.55)
 	hint_tween.tween_property(send_hint, "modulate:a", 1.0, 0.55)
-	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.06)))
+	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.06)), true)
 	send_button.disabled = false
 	await send_button.pressed
 	send_hint.hide()
@@ -267,7 +278,7 @@ func show_intro_monitor_chat(chat_data: Dictionary) -> void:
 	if not follow_up.is_empty():
 		await get_tree().create_timer(float(follow_up.get("before_delay", 1.0))).timeout
 		question_box.text = ""
-		await type_chat_text(question_box, str(follow_up.get("text", "")), float(follow_up.get("character_delay", 0.05)))
+		await type_chat_text(question_box, str(follow_up.get("text", "")), float(follow_up.get("character_delay", 0.05)), true)
 		await get_tree().create_timer(float(follow_up.get("after_delay", 2.0))).timeout
 	chat.queue_free()
 	var tool_match_game: Dictionary = chat_data.get("tool_match_game", {})
@@ -457,7 +468,14 @@ func _on_laptop_sound_finished() -> void:
 
 func _on_background_music_changed(is_enabled: bool) -> void:
 	if not is_enabled:
+		background_music.stop()
 		laptop_sound.stop()
+		return
+	_sync_background_music()
+
+func _sync_background_music() -> void:
+	if GameSettings.background_music_enabled and not background_music.playing:
+		background_music.play()
 
 func show_animated_logo(logo_data: Dictionary) -> void:
 	var logo: Node2D = ANIMATED_LOGO_SCENE.instantiate()
@@ -645,18 +663,24 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 	return response_box
 
 func type_chat_sequence(question_box: Label, question: String, response_box: Label, response: String) -> void:
-	await type_chat_text(question_box, question)
+	await type_chat_text(question_box, question, 0.012, true)
 	response_box.text = "..."
 	await get_tree().create_timer(1.5).timeout
 	response_box.text = ""
 	await type_chat_text(response_box, response)
 
-func type_chat_text(text_box: Label, text: String, character_delay := 0.012) -> void:
+func type_chat_text(text_box: Label, text: String, character_delay := 0.012, is_player_typing := false) -> void:
+	if is_player_typing:
+		player_typing_sound.play()
 	for character_index in text.length():
 		if not is_instance_valid(text_box):
+			if is_player_typing:
+				player_typing_sound.stop()
 			return
 		text_box.text = text.substr(0, character_index + 1)
 		await get_tree().create_timer(character_delay).timeout
+	if is_player_typing:
+		player_typing_sound.stop()
 
 func _on_monitor_chat_closed(chat: TextureRect) -> void:
 	if is_instance_valid(chat):
@@ -1328,7 +1352,7 @@ func show_tool_match_intro_chat(chat_data: Dictionary) -> void:
 	var hint_tween := send_hint.create_tween().set_loops()
 	hint_tween.tween_property(send_hint, "modulate:a", 0.2, 0.55)
 	hint_tween.tween_property(send_hint, "modulate:a", 1.0, 0.55)
-	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.04)))
+	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.04)), true)
 	send_button.disabled = false
 	await send_button.pressed
 	send_hint.hide()

@@ -255,6 +255,8 @@ func _on_game_settings_changed() -> void:
 func refresh_progress_values() -> void:
 	score_value.text = to_persian_digits(ScoreStore.get_total_score())
 	star_value.text = to_persian_digits(ScoreStore.get_total_stars())
+	var active_mission := ProgressStore.get_active_mission()
+	stage_value.text = "%s/%s" % [to_persian_digits(active_mission.x), to_persian_digits(GameContent.STAGES.size())]
 
 func to_persian_digits(value: int) -> String:
 	var result := str(value)

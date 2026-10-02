@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/level_scene.gd" id="1_script"]
 [ext_resource type="Script" path="res://components/pan_zoom_viewport.gd" id="3_pan_zoom"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://components/phone_message_overlay.tscn" id="7_phone_message"]
 [ext_resource type="Script" path="res://components/stretch_to_fit_viewport.gd" id="6_stretch_to_fit"]
 [ext_resource type="PackedScene" path="res://components/stage_progress_panel.tscn" id="8_stage_progress"]
+[ext_resource type="AudioStream" path="res://assets/sounds/computer-keyboard-typing.mp3" id="9_typing_sound"]
 
 [node name="Level1" type="Control"]
 layout_mode = 3
@@ -126,7 +127,12 @@ mouse_filter = 2
 
 [node name="NotificationSound" type="AudioStreamPlayer" parent="."]
 
+[node name="BackgroundMusic" type="AudioStreamPlayer" parent="."]
+
 [node name="LaptopSound" type="AudioStreamPlayer" parent="."]
+
+[node name="PlayerTypingSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("9_typing_sound")
 
 [node name="StageProgressPanel" parent="." instance=ExtResource("8_stage_progress")]
 visible = false
