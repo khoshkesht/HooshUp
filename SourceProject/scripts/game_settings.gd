@@ -15,21 +15,14 @@ const AVATAR_IDS := [1, 2, 6, 7]
 
 var selected_world: World = World.GIRL
 var selected_avatar_id := DEFAULT_GIRL_AVATAR_ID
-var world_has_been_selected := false
 var player_name := "بازیکن"
 var background_music_enabled := true
 var avatar_configs: Dictionary = {}
+var player_profile_completed := false
 
 func _ready() -> void:
 	load_avatar_configs()
 	load_settings()
-
-func set_selected_world(world: World) -> void:
-	selected_world = world
-	selected_avatar_id = get_default_avatar_id(world)
-	world_has_been_selected = true
-	save_settings()
-	settings_changed.emit()
 
 func save_player_settings(new_player_name: String, avatar_id: int, music_enabled: bool) -> void:
 	player_name = new_player_name.strip_edges()
@@ -37,14 +30,14 @@ func save_player_settings(new_player_name: String, avatar_id: int, music_enabled
 		player_name = "بازیکن"
 	selected_avatar_id = avatar_id if AVATAR_IDS.has(avatar_id) else DEFAULT_GIRL_AVATAR_ID
 	selected_world = get_avatar_world(selected_avatar_id)
-	world_has_been_selected = true
+	player_profile_completed = true
 	background_music_enabled = music_enabled
 	save_settings()
 	settings_changed.emit()
 	background_music_changed.emit(background_music_enabled)
 
-func has_world_selection() -> bool:
-	return world_has_been_selected
+func has_player_profile() -> bool:
+	return player_profile_completed
 
 func get_levels_directory() -> String:
 	return GIRL_LEVELS_DIRECTORY if selected_world == World.GIRL else BOY_LEVELS_DIRECTORY
@@ -104,23 +97,18 @@ func load_settings() -> void:
 	var config := ConfigFile.new()
 	if config.load(SETTINGS_PATH) != OK:
 		return
-	var saved_world := config.get_value("player", "world", "") as String
-	if saved_world == "girl" or saved_world == "boy":
-		selected_world = World.BOY if saved_world == "boy" else World.GIRL
-		world_has_been_selected = true
 	var saved_avatar_id := int(config.get_value("player", "avatar_id", 0))
 	if AVATAR_IDS.has(saved_avatar_id):
 		selected_avatar_id = saved_avatar_id
 		selected_world = get_avatar_world(selected_avatar_id)
-	elif world_has_been_selected:
-		selected_avatar_id = get_default_avatar_id(selected_world)
 	player_name = str(config.get_value("player", "name", player_name))
 	background_music_enabled = bool(config.get_value("audio", "background_music_enabled", background_music_enabled))
+	player_profile_completed = bool(config.get_value("player", "profile_completed", false))
 
 func save_settings() -> void:
 	var config := ConfigFile.new()
-	config.set_value("player", "world", "girl" if selected_world == World.GIRL else "boy")
 	config.set_value("player", "avatar_id", selected_avatar_id)
 	config.set_value("player", "name", player_name)
+	config.set_value("player", "profile_completed", player_profile_completed)
 	config.set_value("audio", "background_music_enabled", background_music_enabled)
 	config.save(SETTINGS_PATH)

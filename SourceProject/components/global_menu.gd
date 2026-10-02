@@ -45,6 +45,9 @@ func _on_menu_action_requested(action_id: String) -> void:
 	elif action_id == "badges":
 		open_badges()
 
+func open_initial_player_setup() -> void:
+	settings_panel.open_settings(true)
+
 func open_badges(return_to_map_on_close := false) -> void:
 	return_to_map_after_badges = return_to_map_on_close
 	badges_panel.open_badges()

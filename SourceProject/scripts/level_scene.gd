@@ -48,6 +48,9 @@ func _ready() -> void:
 	GlobalMenu.set_hint_available(true)
 	if not GlobalMenu.hint_requested.is_connected(_on_hint_requested):
 		GlobalMenu.hint_requested.connect(_on_hint_requested)
+	if not GameSettings.has_player_profile():
+		GlobalMenu.open_initial_player_setup()
+		await GlobalMenu.settings_panel.settings_saved
 	load_level_data()
 	if level_data.is_empty():
 		return

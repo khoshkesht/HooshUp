@@ -1,6 +1,8 @@
 class_name SettingsPanel
 extends Control
 
+signal settings_saved
+
 const PANEL_TEXTURE := preload("res://assets/pics/ui/menu-settings.png")
 const CLOSE_TEXTURE := preload("res://assets/pics/ui/close.png")
 const MUSIC_ON_TEXTURE := preload("res://assets/pics/ui/mudic-on.png")
@@ -13,6 +15,9 @@ var music_toggle: Button
 var music_icon: TextureRect
 var selected_avatar_id := GameSettings.DEFAULT_GIRL_AVATAR_ID
 var music_enabled := true
+var initial_profile_required := false
+var avatar_selected_for_initial_profile := true
+var close_button: TextureButton
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -22,13 +27,19 @@ func _ready() -> void:
 	resized.connect(refresh_layout)
 	hide()
 
-func open_settings() -> void:
+func open_settings(require_player_profile := false) -> void:
+	initial_profile_required = require_player_profile
+	avatar_selected_for_initial_profile = not initial_profile_required
 	selected_avatar_id = GameSettings.selected_avatar_id
-	name_input.text = GameSettings.player_name
+	name_input.text = "" if initial_profile_required else GameSettings.player_name
+	name_input.placeholder_text = "نام خودت را بنویس (ضروری)" if initial_profile_required else "نام خودت را بنویس"
 	music_enabled = GameSettings.background_music_enabled
 	update_avatar_buttons()
 	update_music_buttons()
+	close_button.visible = not initial_profile_required
 	show()
+	if initial_profile_required:
+		name_input.grab_focus()
 
 func build() -> void:
 	var shade := ColorRect.new()
@@ -96,7 +107,7 @@ func build() -> void:
 	save_button.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
 	save_button.pressed.connect(save_settings)
 	add_label("SaveLabel", "ذخیره", Vector2(430, 535), Vector2(340, 92), 32, HORIZONTAL_ALIGNMENT_CENTER)
-	var close_button := TextureButton.new()
+	close_button = TextureButton.new()
 	close_button.name = "Close"
 	close_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	close_button.texture_normal = CLOSE_TEXTURE
@@ -160,6 +171,7 @@ func add_avatar_button(avatar_id: int, position_value: Vector2) -> void:
 
 func select_avatar(avatar_id: int) -> void:
 	selected_avatar_id = avatar_id
+	avatar_selected_for_initial_profile = true
 	update_avatar_buttons()
 
 func update_avatar_buttons() -> void:
@@ -167,7 +179,8 @@ func update_avatar_buttons() -> void:
 		var button := avatar_buttons[avatar_id] as TextureButton
 		if not is_instance_valid(button):
 			continue
-		button.modulate = Color.WHITE if avatar_id == selected_avatar_id else Color(0.35, 0.35, 0.35, 1.0)
+		var is_selected: bool = avatar_selected_for_initial_profile and avatar_id == selected_avatar_id
+		button.modulate = Color.WHITE if is_selected else Color(0.35, 0.35, 0.35, 1.0)
 		button.scale = Vector2.ONE
 
 func toggle_music() -> void:
@@ -181,5 +194,9 @@ func update_music_buttons() -> void:
 	music_toggle.tooltip_text = "روشن" if music_enabled else "خاموش"
 
 func save_settings() -> void:
+	if initial_profile_required and (name_input.text.strip_edges().is_empty() or not avatar_selected_for_initial_profile):
+		name_input.grab_focus()
+		return
 	GameSettings.save_player_settings(name_input.text, selected_avatar_id, music_enabled)
 	hide()
+	settings_saved.emit()

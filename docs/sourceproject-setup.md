@@ -8,6 +8,6 @@ The component is instantiated in `scenes/test.tscn` for visual review.
 
 `components/countdown.tscn` is a reusable countdown component. It renders a Persian remaining-time value over `assets/pics/ui/countdown.png`, emits `finished` at zero, and provides `place_bottom_right()` for the standard small bottom-right placement.
 
-`GameSettings` is an autoload that persists the selected player world to `user://settings.cfg`. `girl` resolves level images from `assets/pics/levels/g`; `boy` resolves them from `assets/pics/levels/b`. Scenes request assets by name through `GameSettings`, rather than hard-coding a world-specific path. `scenes/level1.tscn` requests `l1-0`.
+`GameSettings` is an autoload that persists the player profile to `user://settings.cfg`. The selected avatar determines the level-image set: girl avatars resolve `assets/pics/levels/g`; boy avatars resolve `assets/pics/levels/b`. Scenes request assets by name through `GameSettings`, rather than hard-coding a world-specific path. `scenes/level1.tscn` requests `l1-0`.
 
-On the first launch, `scenes/main.tscn` opens `scenes/world_selection.tscn`. Selecting a world saves the choice through `GameSettings` and opens Level 1. Later launches use the saved world and open Level 1 directly.
+`scenes/main.tscn` always opens the map. On the first entry to Level 1, the settings panel remains open until the player saves their name, avatar, and audio preference; the game then starts with the avatar's matching image set.
