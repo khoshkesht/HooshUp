@@ -6,6 +6,9 @@ signal closed
 const BACKGROUND_TEXTURE := preload("res://assets/pics/ui/menu-blank.png")
 const LOCKED_BADGE_SHADER := preload("res://shaders/badge_locked.gdshader")
 const DESIGN_SIZE := Vector2(1672, 941)
+# The badge artwork is larger than the shared 1280x720 UI canvas. Keep its
+# authored coordinates, then fit it to that same canvas as the global menu.
+const PANEL_BASE_SCALE := ResponsiveLayout.DESIGN_SIZE.y / DESIGN_SIZE.y
 const BADGES_PER_ROW := 4
 const BADGE_CELL_SIZE := Vector2(320, 305)
 const BADGES_VIEWPORT_POSITION := Vector2(130, 215)
@@ -122,7 +125,7 @@ func refresh_badges() -> void:
 func refresh_layout() -> void:
 	if not is_instance_valid(background):
 		return
-	var scale_factor := ResponsiveLayout.contain_scale(size)
+	var scale_factor := ResponsiveLayout.contain_scale(size) * PANEL_BASE_SCALE
 	var origin := ResponsiveLayout.safe_origin(size)
 	background.position = origin
 	background.scale = Vector2.ONE * scale_factor

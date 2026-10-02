@@ -1,27 +1,59 @@
+# Godot
+.godot/
+.import/
+.mono/
+
+# Builds / exports
+export/
+build/
+builds/
+dist/
 *.apk
 *.idsig
 
-# Godot 4+
-.godot/
+# Sensitive
+export_credentials.cfg
+pass/
 
-# Godot 3
-.import/
-
-# Exported builds
-/export/
-/build/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE / Editor
+# IDE
 .vscode/
 .idea/
+.vs/
 
-# Temporary files
+# .NET / C#
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.sln.iml
+
+# NuGet
+packages/
+*.nupkg
+
+# Temp / logs / cache
 *.tmp
 *.temp
+*.bak
+*.swp
+*.swo
+*~
+~$*
+*.log
+*.cache
+logs/
 
-.godot/
-pass/
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
