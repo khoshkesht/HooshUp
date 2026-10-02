@@ -1,0 +1,289 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://components/global_menu_overlay.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/pics/ui/menu.png" id="2_menu_button"]
+[ext_resource type="Texture2D" path="res://assets/pics/ui/topmenu.png" id="3_menu_panel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_confirmation"]
+bg_color = Color(0.055, 0.075, 0.13, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.7, 0.2, 0.9)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="GlobalMenuOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="MenuPanel" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+texture = ExtResource("3_menu_panel")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MenuButton" type="TextureButton" parent="."]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -108.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 108.0
+grow_horizontal = 0
+texture_normal = ExtResource("2_menu_button")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="MenuContent" type="Control" parent="MenuPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Avatar" type="TextureRect" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 205.0
+offset_top = 132.0
+offset_right = 345.0
+offset_bottom = 365.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="UserName" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 445.0
+offset_top = 178.0
+offset_right = 890.0
+offset_bottom = 248.0
+theme_override_colors/font_color = Color(0.95, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 36
+text = "نام کاربر"
+
+[node name="StarLabel" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 520.0
+offset_top = 270.0
+offset_right = 625.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
+theme_override_font_sizes/font_size = 24
+text = "ستاره"
+
+[node name="StarValue" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 545.0
+offset_top = 306.0
+offset_right = 610.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 34
+text = "12"
+
+[node name="ScoreLabel" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 770.0
+offset_top = 270.0
+offset_right = 875.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(0.8, 0.97, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "امتیاز"
+
+[node name="ScoreValue" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 795.0
+offset_top = 306.0
+offset_right = 850.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 34
+text = "0"
+
+[node name="StageLabel" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 1015.0
+offset_top = 270.0
+offset_right = 1120.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(1, 0.9, 0.75, 1)
+theme_override_font_sizes/font_size = 24
+text = "مرحله"
+
+[node name="StageValue" type="Label" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 1040.0
+offset_top = 306.0
+offset_right = 1105.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 34
+text = "#/#"
+
+[node name="StageButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 920.0
+offset_top = 245.0
+offset_right = 1140.0
+offset_bottom = 380.0
+mouse_default_cursor_shape = 2
+tooltip_text = "نمایش پیشرفت مرحله"
+flat = true
+
+[node name="ExitButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 1080.0
+offset_top = 410.0
+offset_right = 1270.0
+offset_bottom = 665.0
+flat = true
+
+[node name="SettingsButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 450.0
+offset_top = 410.0
+offset_right = 650.0
+offset_bottom = 665.0
+flat = true
+
+[node name="HomeButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 410.0
+offset_right = 230.0
+offset_bottom = 665.0
+flat = true
+
+[node name="BadgesButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 245.0
+offset_top = 410.0
+offset_right = 440.0
+offset_bottom = 665.0
+flat = true
+
+[node name="ProfileButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 660.0
+offset_top = 410.0
+offset_right = 860.0
+offset_bottom = 665.0
+flat = true
+
+[node name="BackButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 870.0
+offset_top = 410.0
+offset_right = 1070.0
+offset_bottom = 665.0
+flat = true
+
+[node name="CloseButton" type="Button" parent="MenuPanel/MenuContent"]
+layout_mode = 0
+offset_left = 1135.0
+offset_top = 35.0
+offset_right = 1245.0
+offset_bottom = 145.0
+flat = true
+
+[node name="ExitConfirmation" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Shade" type="ColorRect" parent="ExitConfirmation"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+mouse_filter = 0
+
+[node name="Panel" type="PanelContainer" parent="ExitConfirmation"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -100.0
+offset_right = 250.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_confirmation")
+mouse_filter = 0
+
+[node name="Margin" type="MarginContainer" parent="ExitConfirmation/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 18
+
+[node name="Content" type="VBoxContainer" parent="ExitConfirmation/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Text" type="Label" parent="ExitConfirmation/Panel/Margin/Content"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 30
+text = "مطمئنی می‌خواهی از بازی خارج شوی؟"
+autowrap_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="ExitConfirmation/Panel/Margin/Content"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="CancelButton" type="Button" parent="ExitConfirmation/Panel/Margin/Content/Actions"]
+custom_minimum_size = Vector2(165, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "انصراف"
+
+[node name="ConfirmButton" type="Button" parent="ExitConfirmation/Panel/Margin/Content/Actions"]
+custom_minimum_size = Vector2(165, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "خروج"
+
+[connection signal="pressed" from="MenuPanel/MenuContent/ExitButton" to="." method="_on_exit_pressed"]
+[connection signal="pressed" from="MenuPanel/MenuContent/SettingsButton" to="." method="_on_menu_action_pressed" binds= ["settings"]]
+[connection signal="pressed" from="MenuPanel/MenuContent/HomeButton" to="." method="_on_menu_action_pressed" binds= ["home"]]
+[connection signal="pressed" from="MenuPanel/MenuContent/StageButton" to="." method="_on_menu_action_pressed" binds= ["stage"]]
+[connection signal="pressed" from="MenuPanel/MenuContent/BadgesButton" to="." method="_on_menu_action_pressed" binds= ["badges"]]
+[connection signal="pressed" from="MenuPanel/MenuContent/ProfileButton" to="." method="_on_menu_action_pressed" binds= ["profile"]]
+[connection signal="pressed" from="MenuPanel/MenuContent/BackButton" to="." method="_on_menu_action_pressed" binds= ["back"]]
+[connection signal="pressed" from="MenuPanel/MenuContent/CloseButton" to="." method="close_menu"]
+[connection signal="pressed" from="ExitConfirmation/Panel/Margin/Content/Actions/CancelButton" to="." method="_on_exit_cancelled"]
+[connection signal="pressed" from="ExitConfirmation/Panel/Margin/Content/Actions/ConfirmButton" to="." method="_on_exit_confirmed"]

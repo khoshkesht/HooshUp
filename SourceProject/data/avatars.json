@@ -1,0 +1,30 @@
+{
+  "avatars": {
+    "1": {
+      "world": "g",
+      "idle_frame_offsets": {
+        "home": [29, -22, 0, -12],
+        "street": [6, -17, -7, -20]
+      }
+    },
+    "2": {
+      "world": "g",
+      "idle_frame_offsets": {}
+    },
+    "6": {
+      "world": "b",
+      "idle_frame_offsets": {
+        "home": [-9, -9, 13, 5],
+        "street": [27, 0, -6, -22]
+      },
+      "idle_frame_sizes": {
+        "home": [495.75, 793],
+        "street": [522.25, 753]
+      }
+    },
+    "7": {
+      "world": "b",
+      "idle_frame_offsets": {}
+    }
+  }
+}

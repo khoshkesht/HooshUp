@@ -1,0 +1,132 @@
+{
+  "id": "level1",
+  "stage": 1,
+  "mission": 1,
+  "background_asset": "l1-0-phone-v3",
+  "move_area_asset": "l1-movearea-mask",
+  "player": {
+    "asset": "avatar",
+    "sprite_sheet": "home",
+    "walk_sprite_asset": "avatar_walk_4_topback",
+    "walk_frames": 4,
+    "walk_frame_size": [543, 724],
+    "walk_fps": 6.0,
+    "walk_front_sprite_asset": "avatar_walk_4_front_right",
+    "walk_front_frames": 4,
+    "walk_front_frame_size": [543, 724],
+    "walk_front_fps": 6.0,
+    "idle_sprite_asset": "avatar_idle_4_topback_stable",
+    "idle_frames": 4,
+    "idle_frame_size": [521.75, 754],
+    "idle_fps": 2.0,
+    "position": [0.53, 0.95],
+    "size": [242, 292],
+    "ground_contact_offset_y": 24.0,
+    "walk_speed": 300.0
+  },
+  "intro": {
+    "delay_seconds": 5.0,
+    "notification_sound": "res://assets/sounds/message.mp3",
+    "alert_hotspot_id": "phone"
+  },
+  "hotspots": [
+    {
+      "id": "phone",
+      "enabled": true,
+      "position": [0.20, 0.315],
+      "radius": 0.025,
+      "is_clue": true,
+      "player_target": [0.35, 0.51],
+      "unlocks": ["laptop"],
+      "dialogue": {
+        "presentation": "phone_message",
+        "text": "سلام چطوری!\nتحقیق رو آماده کردی؟\nباید تحویل بدیما :(",
+        "close_text": "اصلا یادم نبود!",
+        "choices": [
+          { "id": "start_with_laptop", "text": "از لپ‌تاپ شروع می‌کنم" }
+        ]
+      }
+    },
+    {
+      "id": "laptop",
+      "enabled": false,
+      "position": [0.60, 0.145],
+      "radius": 0.025,
+      "is_clue": true,
+      "player_target": [0.58, 0.60]
+    },
+    {
+      "id": "calendar",
+      "enabled": false,
+      "position": [0.067, 0.304],
+      "radius": 0.035,
+      "is_clue": true,
+      "dialogue": {
+        "layout": { "position": [640, 540], "size": [1040, 280] },
+        "text": "وقت زیادی ندارم؛ باید از بچه‌ها هم بپرسم چه‌کار کرده‌اند.",
+        "choices": [
+          { "id": "use_my_books", "text": "شاید از کتاب‌های خودم بتوانم استفاده کنم" }
+        ]
+      }
+    },
+    {
+      "id": "bookcase",
+      "enabled": false,
+      "position": [0.929, 0.781],
+      "radius": 0.04,
+      "is_clue": true,
+      "dialogue": {
+        "layout": { "position": [640, 540], "size": [1040, 280] },
+        "text": "از روی کتاب‌هایی که دارم تحقیق کنم؟",
+        "choices": [
+          { "id": "need_library", "text": "باید برم کتابخونه؟ گوشی چطور؟" }
+        ]
+      }
+    }
+  ],
+  "checkpoint_after_hotspots": 1,
+  "scene_checkpoint_after_hotspots": 1,
+  "checkpoints": {
+    "1": {
+      "background_asset": "l1-1",
+      "zoom": 1.2,
+      "loop_sound": "res://assets/sounds/robot.wav",
+      "animated_logo": {
+        "position": [0.5, 0.5],
+        "scale": 0.25,
+        "monitor_app": {
+          "asset": "res://assets/pics/ui/hooshup1.png",
+          "position": [0.498, 0.458],
+          "size": [0.700, 0.628],
+          "tools": [
+            {
+              "id": "plan",
+              "title": "برنامه‌ریزی کن",
+              "response": "کارها را به قدم‌های کوچک‌تر تقسیم می‌کنم.\nبرای درس، پروژه، سفر یا برنامهٔ روزانه.\nترتیب، زمان و نیازها را پیشنهاد می‌دهم.\nتو برنامهٔ مناسب شرایطت را انتخاب می‌کنی.\nمسیر را مرتب می‌کنم؛ تصمیم آخر با توست."
+            },
+            {
+              "id": "explain",
+              "title": "توضیح بده",
+              "response": "موضوع‌های پیچیده را ساده‌تر توضیح می‌دهم.\nبا مثال، مقایسه یا توضیح مرحله‌ای کمک می‌کنم.\nمی‌توانی توضیح کوتاه‌تر یا دقیق‌تر بخواهی.\nبرای موضوعات مهم، منبع معتبر را هم بررسی کن.\nهدف، فهمیدن است؛ نه حفظ‌کردن جواب."
+            },
+            {
+              "id": "image",
+              "title": "تصویر بساز",
+              "response": "از توضیح تو یک تصویر تازه می‌سازم.\nمثل پوستر، شخصیت، اتاق یا صحنهٔ خیالی.\nجزئیات سبک، رنگ و موضوع نتیجه را بهتر می‌کند.\nممکن است تصویر اول دقیقاً دلخواهت نباشد.\nبا تغییر درخواست، قدم‌به‌قدم بهترش می‌کنیم."
+            },
+            {
+              "id": "write",
+              "title": "متن بنویس",
+              "response": "برای شروع، یک متن اولیه می‌سازم.\nمثل پیام، داستان، خلاصه یا متن پروژه.\nلحن را دوستانه، رسمی یا خلاقانه انتخاب کن.\nمتن را بخوان و بخش‌های لازم را تغییر بده.\nایدهٔ تو با کمک من کامل‌تر می‌شود."
+            },
+            {
+              "id": "idea",
+              "title": "ایده بده",
+              "response": "برای شروع، چند مسیر مختلف پیشنهاد می‌دهم.\nبرای پروژه، بازی، داستان یا حل یک مسئله.\nبعضی ایده‌ها مناسب تو هستند و بعضی نه.\nبهترین‌ها را انتخاب یا با هم ترکیب کن.\nمن جرقه می‌زنم؛ ایدهٔ نهایی با توست."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

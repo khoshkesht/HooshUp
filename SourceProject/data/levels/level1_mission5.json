@@ -1,0 +1,89 @@
+{
+  "id": "level1_mission5",
+  "stage": 1,
+  "mission": 5,
+  "background_asset": "l1-0-phone-v3",
+  "move_area_asset": "l1-movearea-mask",
+  "player": {
+    "asset": "avatar",
+    "sprite_sheet": "home",
+    "walk_sprite_asset": "avatar_walk_4_topback",
+    "walk_frames": 4,
+    "walk_frame_size": [543, 724],
+    "walk_fps": 6.0,
+    "walk_front_sprite_asset": "avatar_walk_4_front_right",
+    "walk_front_frames": 4,
+    "walk_front_frame_size": [543, 724],
+    "walk_front_fps": 6.0,
+    "idle_sprite_asset": "avatar_idle_4_topback_stable",
+    "idle_frames": 4,
+    "idle_frame_size": [521.75, 754],
+    "idle_fps": 2.0,
+    "position": [0.58, 0.60],
+    "size": [242, 292],
+    "ground_contact_offset_y": 24.0,
+    "walk_speed": 300.0
+  },
+  "hotspots": [
+    {
+      "id": "laptop",
+      "enabled": true,
+      "position": [0.60, 0.145],
+      "radius": 0.025,
+      "is_clue": true,
+      "player_target": [0.58, 0.60],
+      "scripted_monitor_chat": {
+        "background_asset": "l1-1",
+        "zoom": 1.2,
+        "position": [0.50, 0.46],
+        "size": [0.70, 0.63],
+        "character_delay": 0.025,
+        "steps": [
+          { "role": "player", "text": "با اطلاعاتی که داری بگو چه سرفصل‌هایی رو برای تحقیق انتخاب کنم؟" },
+          { "role": "assistant", "thinking_delay": 1.5, "text": "با توجه به مواردی که گفتی، این‌ها رو پیشنهاد می‌دم:\n۱. شرایط محیطی مریخ\n۲. آب و اکسیژن برای انسان\n۳. سرما و تابش‌های فضایی\n۴. غذا و انرژی در مریخ\n۵. راه‌حل‌های دانشمندان برای زندگی در مریخ" },
+          { "role": "player", "text": "خوب همینا خوبه، کار رو شروع کن، من می‌رم شام بخورم میام." },
+          { "role": "assistant", "thinking_delay": 1.5, "text": "حتماً، تهیهٔ تحقیق رو شروع می‌کنم." }
+        ],
+        "research_progress": {
+          "status_delay": 1.5,
+          "statuses": [
+            "شرایط محیطی مریخ را بررسی می‌کنم.",
+            "اطلاعات آب و اکسیژن موردنیاز انسان را پیدا می‌کنم.",
+            "خطر سرما و تابش‌های فضایی را مرور می‌کنم.",
+            "راه‌های تأمین غذا و انرژی در مریخ را مقایسه می‌کنم.",
+            "نکته‌های مهم را دسته‌بندی می‌کنم و بخش‌های تحقیق را کنار هم می‌گذارم."
+          ]
+        }
+      },
+      "return_to_room": true,
+      "return_to_room_delay": 0.0,
+      "return_transition": "fade",
+      "return_player_position": [0.53, 0.95]
+    },
+    {
+      "id": "laptop_after_research",
+      "enabled": true,
+      "position": [0.60, 0.145],
+      "radius": 0.025,
+      "is_clue": true,
+      "player_target": [0.58, 0.60],
+      "scripted_monitor_chat": {
+        "background_asset": "l1-1",
+        "zoom": 1.2,
+        "position": [0.50, 0.46],
+        "size": [0.70, 0.63],
+        "character_delay": 0.025,
+        "steps": [
+          { "role": "assistant", "thinking_delay": 1.5, "text": "یک نسخهٔ خودکار آماده کردم؛ اما برای ارائه، بهتره که یک بار مرور کنی که اشتباهی نداشته باشه و همونی باشه که میخواستی." },
+          { "role": "player", "text": "پس خودم مرورش می‌کنم.", "after_delay": 2.0 },
+          { "role": "assistant", "thinking_delay": 1.5, "text": "عالیه! مرور کن و هر جا نیاز داشتی، من کمک می‌کنم." }
+        ]
+      },
+      "presentation_path_game": {
+        "success_message": "ارائه آماده شد: سؤال دقیق، کمک هوش آپ و بازبینی تو، کنار هم.",
+        "project28_message": "مسیر کامل شد. بازبینی همیشه لازمه",
+         "after_delay": 4.0
+      }
+    }
+  ]
+}

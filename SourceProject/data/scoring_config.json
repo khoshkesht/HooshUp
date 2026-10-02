@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "wrong_answer_penalty": 5,
+    "hint_penalty": 5,
+    "star_thresholds": [
+      { "minimum_ratio": 0.80, "stars": 5 },
+      { "minimum_ratio": 0.60, "stars": 4 },
+      { "minimum_ratio": 0.40, "stars": 3 },
+      { "minimum_ratio": 0.20, "stars": 2 },
+      { "minimum_ratio": 0.01, "stars": 1 },
+      { "minimum_ratio": 0.00, "stars": 0 }
+    ]
+  },
+  "stages": [
+    { "stage": 1, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 2, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 3, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 4, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 5, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 6, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 7, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 8, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 9, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] },
+    { "stage": 10, "completion_score": 50, "missions": [{ "mission": 1, "pass_score": 50 }, { "mission": 2, "pass_score": 50 }, { "mission": 3, "pass_score": 50 }, { "mission": 4, "pass_score": 50 }, { "mission": 5, "pass_score": 50 }] }
+  ]
+}

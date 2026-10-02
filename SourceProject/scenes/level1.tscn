@@ -1,0 +1,136 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_scene.gd" id="1_script"]
+[ext_resource type="Script" path="res://components/pan_zoom_viewport.gd" id="3_pan_zoom"]
+[ext_resource type="PackedScene" path="res://components/dialogue_panel.tscn" id="4_dialogue_panel"]
+[ext_resource type="PackedScene" path="res://components/phone_message_overlay.tscn" id="7_phone_message"]
+[ext_resource type="Script" path="res://components/stretch_to_fit_viewport.gd" id="6_stretch_to_fit"]
+[ext_resource type="PackedScene" path="res://components/stage_progress_panel.tscn" id="8_stage_progress"]
+
+[node name="Level1" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -30
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.035, 0.055, 0.09, 1)
+mouse_filter = 2
+
+[node name="PanZoomViewport" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+clip_contents = true
+script = ExtResource("3_pan_zoom")
+zoom = 1.2
+
+[node name="World" type="Control" parent="PanZoomViewport"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LevelImage" type="TextureRect" parent="PanZoomViewport/World"]
+z_index = -20
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Hotspots" type="Control" parent="PanZoomViewport/World/LevelImage"]
+z_index = -5
+z_as_relative = false
+layout_mode = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StretchToFitViewport" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+clip_contents = true
+script = ExtResource("6_stretch_to_fit")
+
+[node name="SceneImage" type="TextureRect" parent="StretchToFitViewport"]
+z_index = -20
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Effects" type="Control" parent="StretchToFitViewport/SceneImage"]
+z_index = -10
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Effects" type="Control" parent="PanZoomViewport/World/LevelImage"]
+z_index = -10
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DialoguePanel" parent="." instance=ExtResource("4_dialogue_panel")]
+
+[node name="PhoneMessageOverlay" parent="." instance=ExtResource("7_phone_message")]
+
+[node name="NotificationSound" type="AudioStreamPlayer" parent="."]
+
+[node name="LaptopSound" type="AudioStreamPlayer" parent="."]
+
+[node name="StageProgressPanel" parent="." instance=ExtResource("8_stage_progress")]
+visible = false
+z_index = 20
+z_as_relative = false
+
+[connection signal="finished" from="LaptopSound" to="." method="_on_laptop_sound_finished"]

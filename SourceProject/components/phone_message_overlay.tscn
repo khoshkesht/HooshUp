@@ -1,0 +1,109 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://components/phone_message_overlay.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/pics/ui/phone-message-new.png" id="2_phone_image"]
+
+[sub_resource type="StyleBoxFlat" id="PhoneFrame"]
+bg_color = Color(0.025, 0.03, 0.045, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.36, 0.39, 0.46, 1)
+corner_radius_top_left = 52
+corner_radius_top_right = 52
+corner_radius_bottom_right = 52
+corner_radius_bottom_left = 52
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="PhoneScreen"]
+bg_color = Color(0.965, 0.972, 0.985, 1)
+corner_radius_top_left = 40
+corner_radius_top_right = 40
+corner_radius_bottom_right = 40
+corner_radius_bottom_left = 40
+
+[sub_resource type="StyleBoxFlat" id="Notch"]
+bg_color = Color(0.01, 0.012, 0.02, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="MessageBubble"]
+bg_color = Color(0.05, 0.48, 0.95, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="CloseButton"]
+bg_color = Color(0.12, 0.14, 0.19, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="PhoneMessageOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_script")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.025, 0.05, 0.32)
+mouse_filter = 2
+
+[node name="Phone" type="TextureRect" parent="."]
+layout_mode = 0
+texture = ExtResource("2_phone_image")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="Screen" type="Control" parent="Phone"]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="Status" type="Label" parent="Phone/Screen"]
+layout_mode = 0
+theme_override_colors/font_color = Color(0.08, 0.1, 0.14, 1)
+text = "20:20"
+
+[node name="ConversationTitle" type="Label" parent="Phone/Screen"]
+layout_mode = 0
+theme_override_colors/font_color = Color(0.07, 0.09, 0.13, 1)
+text = "دوست"
+
+[node name="MessageBubble" type="Control" parent="Phone/Screen"]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="MessageText" type="Label" parent="Phone/Screen/MessageBubble"]
+layout_mode = 0
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+autowrap_mode = 2
+
+[node name="CloseButton" type="Button" parent="Phone/Screen"]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("CloseButton")
+text = "بستن"
+
+[node name="Notch" type="Panel" parent="Phone"]
+visible = false
+layout_mode = 0
+theme_override_styles/panel = SubResource("Notch")
+mouse_filter = 2

@@ -1,0 +1,84 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://components/dialogue_panel.gd" id="1_script"]
+[ext_resource type="Script" path="res://components/message_icon.gd" id="2_message_icon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_dialogue"]
+bg_color = Color(0.055, 0.075, 0.13, 0.72)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.7, 0.2, 0.7)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 10
+
+[node name="DialoguePanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = 20.0
+offset_right = 520.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_dialogue")
+mouse_filter = 0
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MessageHeader" type="HBoxContainer" parent="Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Spacer" type="Control" parent="Panel/Margin/Content/MessageHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MessageIcon" type="Control" parent="Panel/Margin/Content/MessageHeader"]
+visible = false
+custom_minimum_size = Vector2(58, 42)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_message_icon")
+
+[node name="Speaker" type="Label" parent="Panel/Margin/Content/MessageHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 44
+
+[node name="Text" type="Label" parent="Panel/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 44
+autowrap_mode = 2
+
+[node name="Choices" type="VBoxContainer" parent="Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8

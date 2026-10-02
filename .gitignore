@@ -1,0 +1,32 @@
+*.apk
+*.idsig
+
+# Godot 4+
+.godot/
+/SourceProject/.godot/
+
+# Godot 3
+.import/
+
+# Exported builds
+/export/
+/build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+
+pass/
+
+SourceProject/.godot/
+design/
+desing/
+*.apk

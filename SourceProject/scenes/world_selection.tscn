@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world_selection.gd" id="1_script"]
+
+[node name="WorldSelection" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.055, 0.075, 0.13, 1)
+mouse_filter = 2
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -180.0
+offset_right = 360.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 28
+
+[node name="Title" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 44
+text = "دنیای خودت را انتخاب کن"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.66, 0.74, 0.88, 1)
+theme_override_font_sizes/font_size = 22
+text = "تصویرها و فضای بازی با انتخاب تو هماهنگ می‌شوند."
+horizontal_alignment = 1
+
+[node name="Choices" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="GirlButton" type="Button" parent="Content/Choices"]
+custom_minimum_size = Vector2(260, 120)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.98, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.25, 0.1, 0.22, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 32
+text = "دنیای دخترانه"
+
+[node name="BoyButton" type="Button" parent="Content/Choices"]
+custom_minimum_size = Vector2(260, 120)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.96, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.17, 0.3, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 32
+text = "دنیای پسرانه"
+
+[connection signal="pressed" from="Content/Choices/GirlButton" to="." method="_on_girl_pressed"]
+[connection signal="pressed" from="Content/Choices/BoyButton" to="." method="_on_boy_pressed"]

@@ -1,0 +1,123 @@
+{
+  "id": "level1_mission2",
+  "stage": 1,
+  "mission": 2,
+  "background_asset": "l1-0-phone-v3",
+  "move_area_asset": "l1-movearea-mask",
+  "player": {
+    "asset": "avatar",
+    "sprite_sheet": "home",
+    "walk_sprite_asset": "avatar_walk_4_topback",
+    "walk_frames": 4,
+    "walk_frame_size": [543, 724],
+    "walk_fps": 6.0,
+    "walk_front_sprite_asset": "avatar_walk_4_front_right",
+    "walk_front_frames": 4,
+    "walk_front_frame_size": [543, 724],
+    "walk_front_fps": 6.0,
+    "idle_sprite_asset": "avatar_idle_4_topback_stable",
+    "idle_frames": 4,
+    "idle_frame_size": [521.75, 754],
+    "idle_fps": 2.0,
+    "position": [0.58, 0.60],
+    "size": [242, 292],
+    "ground_contact_offset_y": 24.0,
+    "walk_speed": 300.0
+  },
+  "intro": {
+    "monitor_chat": {
+      "asset": "res://assets/pics/ui/hooshup-back.png",
+      "background_asset": "l1-1",
+      "zoom": 1.2,
+      "position": [0.50, 0.46],
+      "size": [0.70, 0.63],
+      "question_character_delay": 0.06,
+      "response_wait": 1.5,
+      "response_character_delay": 0.02,
+      "send_tooltip": "ارسال",
+      "send_indicator": "●",
+      "title": "میتونی برای تحقیق بهم کمک کنی؟",
+      "response": "حتماً! برای یک تحقیق خوب، بهتره چند منبع مرتبط رو کنار هم ببینی. دوست داری اول کتاب‌های درسیِ خودت رو در کتابخونه بگردی؟",
+      "follow_up": {
+        "before_delay": 1.0,
+        "text": "میرم کتابخونه رو می‌گردم",
+        "character_delay": 0.05,
+        "after_delay": 2.0
+      }
+    }
+  },
+  "hotspots": [
+    {
+      "id": "bookcase",
+      "enabled": true,
+      "position": [0.929, 0.781],
+      "radius": 0.04,
+      "is_clue": true,
+      "player_target": [0.8, 1],
+      "unlocks": ["calendar"],
+      "dialogue": {
+        "presentation": "thought",
+        "dismiss_on_tap": true,
+        "layout": { "position": [790, 330], "size": [760, 520] },
+        "text": "کتاب‌های من برای این تحقیق کافی نیستند؛ باید منابع کامل‌تری پیدا کنم."
+      }
+    },
+    {
+      "id": "calendar",
+      "enabled": false,
+      "position": [0.067, 0.22],
+      "radius": 0.035,
+      "is_clue": true,
+      "player_target": [0.35, 0.51],
+      "unlocks": ["laptop"],
+      "dialogue": {
+        "presentation": "thought",
+        "dismiss_on_tap": true,
+        "layout": { "position": [650, 270], "size": [760, 520] },
+        "text": "اوه، تحقیق را باید تا ۱۴ آبان تحویل بدهیم!"
+      }
+    },
+    {
+      "id": "laptop",
+      "enabled": false,
+      "position": [0.60, 0.145],
+      "radius": 0.025,
+      "is_clue": true,
+      "player_target": [0.58, 0.60],
+      "tool_match_game": {
+        "background_asset": "l1-1",
+        "zoom": 1.2,
+        "monitor_chat": {
+          "title": "برای تحقیق وقت کمی دارم، کتاب‌هام هم کافی نیستن، چطور می‌تونی کمکم کنی؟",
+          "response": "البته. پس بیا اول بررسی کنیم که من توی چه کارهایی بهتره کمکت کنم.",
+          "question_character_delay": 0.04,
+          "response_wait": 1.5,
+          "response_character_delay": 0.02,
+          "after_delay": 0.8,
+          "send_tooltip": "ارسال",
+          "send_indicator": "●"
+        },
+        "title": "انتخاب کن که برای هر کاری از چه ابزاری استفاده می‌کنی؟",
+        "tools": [
+          { "id": "calculator", "text": "ماشین‌حساب", "icon": "×" },
+          { "id": "search", "text": "جست‌وجو", "icon": "⌕" },
+          { "id": "calendar", "text": "تقویم", "icon": "▣" },
+          { "id": "ai", "text": "AI", "icon": "✦" }
+        ],
+        "tasks": [
+          { "text": "چند روز تا تحویل تحقیق مانده؟", "tool": "calendar" },
+          { "text": "۱۲ × ۸ چند می‌شود؟", "tool": "calculator" },
+          { "text": "سایت موزهٔ علم کجاست؟", "tool": "search" },
+          { "text": "برای تحقیق چه بخش‌هایی داشته باشم؟", "tool": "ai" },
+          { "text": "این پاراگراف را ساده‌تر و خلاصه کن.", "tool": "ai" }
+        ],
+        "correct_feedback": "درست انتخاب کردی!",
+        "wrong_feedback": "این ابزار برای این کار مناسب نیست؛ دوباره امتحان کن.",
+        "answer_feedback_delay": 0.9,
+        "completion_response": "AI یک ابزار همه‌کاره نیست؛ هر ابزار برای کاری مناسب‌تر است.",
+        "completion_character_delay": 0.025,
+        "completion_delay": 2.0
+      }
+    }
+  ]
+}
