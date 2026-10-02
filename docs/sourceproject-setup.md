@@ -11,3 +11,5 @@ The component is instantiated in `scenes/test.tscn` for visual review.
 `GameSettings` is an autoload that persists the player profile to `user://settings.cfg`. The selected avatar determines the level-image set: girl avatars resolve `assets/pics/levels/g`; boy avatars resolve `assets/pics/levels/b`. Scenes request assets by name through `GameSettings`, rather than hard-coding a world-specific path. `scenes/level1.tscn` requests `l1-0`.
 
 `scenes/main.tscn` always opens the map. On the first entry to Level 1, the settings panel remains open until the player saves their name, avatar, and audio preference; the game then starts with the avatar's matching image set.
+
+`components/drag_gesture_hint.gd` gives a two-second drag demonstration on the first display of the map, room, and laptop chat. The three completed demonstrations are stored in `user://settings.cfg`.

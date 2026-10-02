@@ -26,6 +26,10 @@ func _ready() -> void:
 	for stage_index in STAGE_LABELS.size():
 		add_stage_button(stage_index + 1, STAGE_LABELS[stage_index])
 	call_deferred("reset_view")
+	call_deferred("show_drag_gesture_hint")
+
+func show_drag_gesture_hint() -> void:
+	DragGestureHint.show_once(self, "map")
 
 func add_stage_button(stage_number: int, target_rect: Rect2) -> void:
 	var stage: Dictionary = GameContent.get_stage(stage_number)

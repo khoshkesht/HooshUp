@@ -12,6 +12,7 @@ const BOY_LEVELS_DIRECTORY := "b"
 const DEFAULT_GIRL_AVATAR_ID := 1
 const DEFAULT_BOY_AVATAR_ID := 6
 const AVATAR_IDS := [1, 2, 6, 7]
+const DRAG_GESTURE_HINTS_SECTION := "drag_gesture_hints"
 
 var selected_world: World = World.GIRL
 var selected_avatar_id := DEFAULT_GIRL_AVATAR_ID
@@ -38,6 +39,15 @@ func save_player_settings(new_player_name: String, avatar_id: int, music_enabled
 
 func has_player_profile() -> bool:
 	return player_profile_completed
+
+func consume_drag_gesture_hint(hint_id: String) -> bool:
+	var config := ConfigFile.new()
+	config.load(SETTINGS_PATH)
+	if bool(config.get_value(DRAG_GESTURE_HINTS_SECTION, hint_id, false)):
+		return false
+	config.set_value(DRAG_GESTURE_HINTS_SECTION, hint_id, true)
+	config.save(SETTINGS_PATH)
+	return true
 
 func get_levels_directory() -> String:
 	return GIRL_LEVELS_DIRECTORY if selected_world == World.GIRL else BOY_LEVELS_DIRECTORY

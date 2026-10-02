@@ -141,6 +141,7 @@ func show_intro_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	close_intro_monitor_scene()
 
 func show_scripted_monitor_chat(chat_data: Dictionary) -> void:
+	DragGestureHint.show_once(self, "laptop_chat")
 	var chat := TextureRect.new()
 	chat.name = "ScriptedMonitorChat"
 	chat.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -202,6 +203,7 @@ func show_research_progress(chat: TextureRect, response_box: Label, progress_dat
 		await get_tree().create_timer(status_delay).timeout
 
 func show_intro_monitor_chat(chat_data: Dictionary) -> void:
+	DragGestureHint.show_once(self, "laptop_chat")
 	pan_zoom_viewport.hide()
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
@@ -423,6 +425,7 @@ func load_checkpoint(checkpoint_id: int) -> void:
 		GameSettings.get_level_texture(str(checkpoint_data.get("background_asset", "")), level_id),
 		float(checkpoint_data.get("zoom", 1.0))
 	)
+	DragGestureHint.show_once(self, "laptop")
 	checkpoint_loaded = true
 	if is_instance_valid(player_movement):
 		player_movement.hide_player()
@@ -475,6 +478,7 @@ func _on_animated_logo_activated(logo: Node2D, logo_data: Dictionary) -> void:
 	show_monitor_app(monitor_app)
 
 func show_monitor_app(app_data: Dictionary) -> void:
+	DragGestureHint.show_once(self, "laptop")
 	monitor_app_data = app_data
 	var asset_path := str(app_data.get("asset", ""))
 	var texture := load(asset_path) as Texture2D
@@ -572,6 +576,7 @@ func has_read_all_monitor_tools() -> bool:
 	return all_monitor_tools_read
 
 func show_monitor_chat(tool: Dictionary) -> void:
+	DragGestureHint.show_once(self, "laptop_chat")
 	var chat := TextureRect.new()
 	chat.name = "MonitorChat"
 	chat.layout_direction = Control.LAYOUT_DIRECTION_LTR

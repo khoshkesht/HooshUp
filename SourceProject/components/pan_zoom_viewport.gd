@@ -23,6 +23,10 @@ func _ready() -> void:
 	world.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	world.size = ResponsiveLayout.DESIGN_SIZE
 	call_deferred("reset_view")
+	call_deferred("show_drag_gesture_hint")
+
+func show_drag_gesture_hint() -> void:
+	DragGestureHint.show_once(self, "room")
 
 func reset_view() -> void:
 	var zoom_amount := zoom if pan_enabled else 1.0
