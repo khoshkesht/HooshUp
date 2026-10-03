@@ -19,6 +19,7 @@ boot_splash/show_image=false
 [autoload]
 
 GameSettings="*res://scripts/game_settings.gd"
+SecureSaveStore="*res://scripts/secure_save_store.gd"
 ProgressStore="*res://scripts/progress_store.gd"
 ScoreStore="*res://scripts/score_store.gd"
 GlobalMenu="*res://components/global_menu.gd"

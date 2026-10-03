@@ -75,11 +75,14 @@ func _ready() -> void:
 	level_image.texture = GameSettings.get_level_texture(str(level_data.get("background_asset", "")), level_id)
 	var stage_number := int(level_data.get("stage", 0))
 	var mission_number := int(level_data.get("mission", 0))
-	if ProgressStore.is_mission_complete(stage_number, mission_number):
+	if not ProgressStore.is_test_mission(stage_number, mission_number) and ProgressStore.is_mission_complete(stage_number, mission_number):
 		await get_tree().process_frame
 		show_stage_progress()
 		return
 	var saved_checkpoint := ProgressStore.get_checkpoint(stage_number, mission_number)
+	# Direct test selection only bypasses the initial completion/checkpoint checks.
+	# From this point the mission uses normal progress and score persistence.
+	ProgressStore.consume_test_mission(stage_number, mission_number)
 	if saved_checkpoint > 0:
 		await load_checkpoint(saved_checkpoint)
 		return
@@ -664,8 +667,12 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 
 func type_chat_sequence(question_box: Label, question: String, response_box: Label, response: String) -> void:
 	await type_chat_text(question_box, question, 0.012, true)
+	if not is_instance_valid(response_box):
+		return
 	response_box.text = "..."
 	await get_tree().create_timer(1.5).timeout
+	if not is_instance_valid(response_box):
+		return
 	response_box.text = ""
 	await type_chat_text(response_box, response)
 

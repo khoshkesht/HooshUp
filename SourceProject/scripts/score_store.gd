@@ -4,7 +4,8 @@ signal scores_changed
 
 const CONFIG_PATH := "res://data/scoring_config.json"
 const HINT_CONFIG_PATH := "res://data/mission_hints.json"
-const SAVE_PATH := "user://scores.cfg"
+const SAVE_NAME := "scores.cfg"
+const LEGACY_SAVE_PATH := "user://scores.cfg"
 const SCORE_SECTION := "scores"
 const MISSIONS_PER_STAGE := 5
 
@@ -42,7 +43,7 @@ func record_mission_pass(stage_number: int, mission_number: int) -> void:
 	if is_stage_complete(stage_number) and not bool(config.get_value(SCORE_SECTION, "stage_awarded_%d" % stage_number, false)):
 		config.set_value(SCORE_SECTION, "stage_awarded_%d" % stage_number, true)
 		config.set_value(SCORE_SECTION, "stage_score_%d" % stage_number, get_stage_completion_score(stage_number))
-	config.save(SAVE_PATH)
+	SecureSaveStore.save_config(SAVE_NAME, config)
 	scores_changed.emit()
 
 func record_wrong_answer(stage_number: int, mission_number: int) -> void:
@@ -58,7 +59,7 @@ func record_penalty(stage_number: int, mission_number: int, reason: String, amou
 	var key := "%d-%d-%s" % [stage_number, mission_number, reason]
 	var current := int(config.get_value(SCORE_SECTION, "penalty_%s" % key, 0))
 	config.set_value(SCORE_SECTION, "penalty_%s" % key, current + amount)
-	config.save(SAVE_PATH)
+	SecureSaveStore.save_config(SAVE_NAME, config)
 	scores_changed.emit()
 
 func get_total_score() -> int:
@@ -138,8 +139,7 @@ func is_stage_complete(stage_number: int) -> bool:
 
 func load_save() -> ConfigFile:
 	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
-	return config
+	return SecureSaveStore.load_config(SAVE_NAME, LEGACY_SAVE_PATH)
 
 func get_mission_key(stage_number: int, mission_number: int) -> String:
 	return "%d-%d" % [stage_number, mission_number]

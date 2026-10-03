@@ -6,6 +6,7 @@ const MENU_OVERLAY_SCENE := preload("res://components/global_menu.tscn")
 const SETTINGS_PANEL_SCENE := preload("res://components/settings_panel.tscn")
 const STAGE_PROGRESS_PANEL_SCENE := preload("res://components/stage_progress_panel.tscn")
 const BADGES_PANEL_SCENE := preload("res://components/badges_panel.tscn")
+const DEVELOPMENT_MISSION_SELECTOR_SCRIPT := preload("res://components/development_mission_selector.gd")
 const MAP_SCENE := "res://scenes/map.tscn"
 const LEVEL_1_SCENE := "res://scenes/level1.tscn"
 
@@ -32,6 +33,10 @@ func _ready() -> void:
 	add_child(badges_panel)
 	badges_panel.closed.connect(_on_badges_panel_closed)
 	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
+	# DEVELOPMENT ONLY: remove this block and development_mission_selector.gd before release.
+	if OS.is_debug_build():
+		var development_mission_selector := DEVELOPMENT_MISSION_SELECTOR_SCRIPT.new() as DevelopmentMissionSelector
+		add_child(development_mission_selector)
 	get_tree().scene_changed.connect(_on_scene_changed)
 	call_deferred("refresh_hint_availability")
 

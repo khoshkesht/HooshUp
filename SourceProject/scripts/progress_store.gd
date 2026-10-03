@@ -1,6 +1,7 @@
 extends Node
 
-const SAVE_PATH := "user://progress.cfg"
+const SAVE_NAME := "progress.cfg"
+const LEGACY_SAVE_PATH := "user://progress.cfg"
 const PROGRESS_SECTION := "progress"
 const CHECKPOINTS_SECTION := "checkpoints"
 const BADGES_SECTION := "badges"
@@ -8,8 +9,29 @@ const MISSIONS_PER_STAGE := 5
 
 signal badge_awarded(stage_number: int)
 
+var test_mission := Vector2i.ZERO
+
 func _ready() -> void:
 	synchronize_stage_badges()
+
+func begin_test_mission(stage_number: int, mission_number: int) -> void:
+	if not is_valid_mission(stage_number, mission_number):
+		push_error("Invalid test mission: %d-%d" % [stage_number, mission_number])
+		return
+	test_mission = Vector2i(stage_number, mission_number)
+	var config := load_config()
+	set_active_mission_in_config(config, stage_number, mission_number)
+	SecureSaveStore.save_config(SAVE_NAME, config)
+
+func is_test_mission(stage_number: int, mission_number: int) -> bool:
+	return test_mission == Vector2i(stage_number, mission_number)
+
+func is_test_mode() -> bool:
+	return test_mission != Vector2i.ZERO
+
+func consume_test_mission(stage_number: int, mission_number: int) -> void:
+	if is_test_mission(stage_number, mission_number):
+		test_mission = Vector2i.ZERO
 
 func set_checkpoint(stage_number: int, mission_number: int, checkpoint_number: int) -> void:
 	if not is_valid_mission(stage_number, mission_number) or checkpoint_number < 0:
@@ -17,10 +39,12 @@ func set_checkpoint(stage_number: int, mission_number: int, checkpoint_number: i
 		return
 	var config := load_config()
 	config.set_value(CHECKPOINTS_SECTION, get_mission_key(stage_number, mission_number), checkpoint_number)
-	config.save(SAVE_PATH)
+	SecureSaveStore.save_config(SAVE_NAME, config)
 
 func get_checkpoint(stage_number: int, mission_number: int) -> int:
 	if not is_valid_mission(stage_number, mission_number):
+		return 0
+	if is_test_mission(stage_number, mission_number):
 		return 0
 	var config := load_config()
 	var mission_key := get_mission_key(stage_number, mission_number)
@@ -50,7 +74,7 @@ func complete_mission(stage_number: int, mission_number: int) -> void:
 	else:
 		award_stage_badge_in_config(config, stage_number)
 		set_active_mission_in_config(config, stage_number, mission_number)
-	config.save(SAVE_PATH)
+	SecureSaveStore.save_config(SAVE_NAME, config)
 	ScoreStore.record_mission_pass(stage_number, mission_number)
 
 func is_mission_complete(stage_number: int, mission_number: int) -> bool:
@@ -80,9 +104,11 @@ func set_active_mission(stage_number: int, mission_number: int) -> void:
 		return
 	var config := load_config()
 	set_active_mission_in_config(config, stage_number, mission_number)
-	config.save(SAVE_PATH)
+	SecureSaveStore.save_config(SAVE_NAME, config)
 
 func get_active_mission() -> Vector2i:
+	if is_test_mode():
+		return test_mission
 	var config := load_config()
 	var parts := str(config.get_value(PROGRESS_SECTION, "active_mission", "1-1")).split("-")
 	if parts.size() == 2:
@@ -116,8 +142,7 @@ func is_valid_mission(stage_number: int, mission_number: int) -> bool:
 
 func load_config() -> ConfigFile:
 	var config := ConfigFile.new()
-	config.load(SAVE_PATH)
-	return config
+	return SecureSaveStore.load_config(SAVE_NAME, LEGACY_SAVE_PATH)
 
 func synchronize_stage_badges() -> void:
 	var config := load_config()
@@ -127,7 +152,7 @@ func synchronize_stage_badges() -> void:
 			award_stage_badge_in_config(config, stage_number)
 			changed = true
 	if changed:
-		config.save(SAVE_PATH)
+		SecureSaveStore.save_config(SAVE_NAME, config)
 
 func is_stage_complete(stage_number: int) -> bool:
 	if stage_number < 1 or stage_number > GameContent.STAGES.size():
