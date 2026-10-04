@@ -72,7 +72,7 @@ func add_lock_icon(target_rect: Rect2) -> void:
 	lock_icon.size = Vector2(22, 27)
 
 func open_stage(stage_number: int) -> void:
-	if stage_number == 1:
+	if stage_number >= 1 and stage_number <= GameContent.STAGES.size():
 		get_tree().change_scene_to_file(LEVEL_1_SCENE)
 		return
 	push_error("No scene has been created for stage %d yet." % stage_number)

@@ -64,6 +64,7 @@ func _ready() -> void:
 	load_level_data()
 	if level_data.is_empty():
 		return
+	pan_zoom_viewport.zoom = float(level_data.get("zoom", pan_zoom_viewport.zoom))
 	dialogue_panel.choice_selected.connect(_on_dialogue_choice_selected)
 	dialogue_panel.dismiss_requested.connect(_on_dialogue_dismiss_requested)
 	phone_message_overlay.closed.connect(_on_phone_message_closed)
@@ -139,7 +140,13 @@ func play_intro(intro_data: Dictionary) -> void:
 	var intro_dialogue: Dictionary = intro_data.get("dialogue", {})
 	if not intro_dialogue.is_empty():
 		intro_is_open = true
-		dialogue_panel.show_dialogue(intro_dialogue)
+		if str(intro_dialogue.get("presentation", "")) == "phone_message":
+			phone_message_overlay.show_message(
+				str(intro_dialogue.get("text", "")),
+				str(intro_dialogue.get("close_text", "بستن"))
+			)
+		else:
+			dialogue_panel.show_dialogue(intro_dialogue)
 
 func show_intro_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	pan_zoom_viewport.hide()
@@ -738,6 +745,7 @@ func load_level_data() -> void:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:
 		level_data = parsed
+		level_id = "level%d" % int(level_data.get("stage", 1))
 	else:
 		push_error("Level data is invalid: %s" % path)
 
@@ -818,6 +826,12 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 	var tool_match_game: Dictionary = hotspot_data.get("tool_match_game", {})
 	if not tool_match_game.is_empty():
 		await show_hotspot_tool_match_game(tool_match_game)
+		return
+	var paper_sort_game: Dictionary = hotspot_data.get("paper_sort_game", {})
+	if not paper_sort_game.is_empty():
+		await show_paper_sort_game(paper_sort_game)
+		close_intro_monitor_scene()
+		show_next_hotspot()
 		return
 	var scripted_monitor_chat: Dictionary = hotspot_data.get("scripted_monitor_chat", {})
 	if not scripted_monitor_chat.is_empty():
@@ -1414,3 +1428,149 @@ func check_completion() -> void:
 			total_clues += 1
 	if total_clues > 0 and found_clues.size() >= total_clues:
 		dialogue_panel.show_dialogue(level_data.get("completion_dialogue", {}))
+
+func show_paper_sort_game(game_data: Dictionary) -> void:
+	pan_zoom_viewport.hide()
+	pan_zoom_viewport.set_pan_enabled(false)
+	level_image = stretch_to_fit_viewport.scene_image
+	effects = $StretchToFitViewport/SceneImage/Effects
+	stretch_to_fit_viewport.show_scene(GameSettings.get_level_texture(str(game_data.get("background_asset", "l2-computer")), level_id), float(game_data.get("zoom", 1.0)))
+	await get_tree().process_frame
+	var game := Control.new()
+	game.name = "PaperSortGame"
+	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game.mouse_filter = Control.MOUSE_FILTER_STOP
+	game.set_meta("dragging_piece", null)
+	game.set_meta("completed", false)
+	effects.add_child(game)
+	await get_tree().process_frame
+	var shade := ColorRect.new()
+	shade.color = Color(0.02, 0.05, 0.12, 0.50)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game.add_child(shade)
+	var title := make_game_label(str(game_data.get("title", "")), roundi(game.size.y * 0.052), HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_color", Color.WHITE)
+	title.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.08, 0.9))
+	title.add_theme_constant_override("shadow_offset_x", 2)
+	title.add_theme_constant_override("shadow_offset_y", 2)
+	title.position = Vector2(game.size.x * 0.26, game.size.y * 0.035)
+	title.size = Vector2(game.size.x * 0.48, game.size.y * 0.07)
+	game.add_child(title)
+	var feedback := make_game_label(str(game_data.get("instruction", "")), roundi(game.size.y * 0.038), HORIZONTAL_ALIGNMENT_CENTER)
+	feedback.name = "Feedback"
+	feedback.position = Vector2(game.size.x * 0.28, game.size.y * 0.105)
+	feedback.size = Vector2(game.size.x * 0.44, game.size.y * 0.055)
+	game.add_child(feedback)
+	var target_positions := [Vector2(0.30, 0.24), Vector2(0.52, 0.24), Vector2(0.30, 0.54), Vector2(0.52, 0.54)]
+	var correct_ids: Array = game_data.get("correct_pieces", ["p1", "p2", "p3", "p4"])
+	for index in correct_ids.size():
+		var slot := Panel.new()
+		slot.name = "PaperSlot%d" % index
+		slot.set_meta("expected_piece", str(correct_ids[index]))
+		slot.set_meta("filled", false)
+		slot.position = Vector2(game.size.x * target_positions[index].x, game.size.y * target_positions[index].y)
+		slot.size = Vector2(game.size.x * 0.21, game.size.y * 0.25)
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_theme_stylebox_override("panel", make_game_style(Color("edf5ffb8"), Color("75d7e1")))
+		game.add_child(slot)
+	var piece_ids: Array = game_data.get("pieces", ["p1", "p2", "p3", "p4", "p5", "p6"])
+	piece_ids.shuffle()
+	game.gui_input.connect(_on_paper_game_input.bind(game, feedback, correct_ids.size(), game_data))
+	var piece_positions := [Vector2(0.02, 0.17), Vector2(0.12, 0.66), Vector2(0.79, 0.17), Vector2(0.79, 0.66), Vector2(0.02, 0.43), Vector2(0.79, 0.43)]
+	for index in piece_ids.size():
+		var piece := TextureRect.new()
+		piece.name = "PaperPiece%s" % str(piece_ids[index])
+		piece.texture = load("res://assets/pics/levels/2/%s.png" % str(piece_ids[index])) as Texture2D
+		piece.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		piece.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		piece.mouse_filter = Control.MOUSE_FILTER_STOP
+		piece.set_meta("piece_id", str(piece_ids[index]))
+		piece.set_meta("home_position", Vector2(game.size.x * piece_positions[index].x, game.size.y * piece_positions[index].y))
+		piece.position = piece.get_meta("home_position") as Vector2
+		piece.size = Vector2(game.size.x * 0.20, game.size.y * 0.24)
+		game.add_child(piece)
+		piece.gui_input.connect(_on_paper_piece_input.bind(game, piece, feedback, correct_ids.size(), game_data))
+	await game.tree_exited
+
+func _on_paper_piece_input(event: InputEvent, game: Control, piece: TextureRect, feedback: Label, required_count: int, game_data: Dictionary) -> void:
+	if bool(game.get_meta("completed", false)) or bool(piece.get_meta("placed", false)):
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			game.set_meta("dragging_piece", piece)
+			piece.z_index = 5
+		else:
+			finish_paper_piece_drop(game, piece, feedback, required_count, game_data)
+		accept_event()
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			game.set_meta("dragging_piece", piece)
+			piece.z_index = 5
+		else:
+			finish_paper_piece_drop(game, piece, feedback, required_count, game_data)
+		accept_event()
+	elif event is InputEventMouseMotion and game.get_meta("dragging_piece", null) == piece:
+		piece.position += event.relative
+		accept_event()
+	elif event is InputEventScreenDrag and game.get_meta("dragging_piece", null) == piece:
+		piece.position += event.relative
+		accept_event()
+
+func _on_paper_game_input(event: InputEvent, game: Control, feedback: Label, required_count: int, game_data: Dictionary) -> void:
+	var piece := game.get_meta("dragging_piece", null) as TextureRect
+	if piece == null or bool(game.get_meta("completed", false)):
+		return
+	if event is InputEventMouseMotion or event is InputEventScreenDrag:
+		piece.position += event.relative
+		accept_event()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		finish_paper_piece_drop(game, piece, feedback, required_count, game_data)
+		accept_event()
+	elif event is InputEventScreenTouch and not event.pressed:
+		finish_paper_piece_drop(game, piece, feedback, required_count, game_data)
+		accept_event()
+
+func finish_paper_piece_drop(game: Control, piece: TextureRect, feedback: Label, required_count: int, game_data: Dictionary) -> void:
+	game.set_meta("dragging_piece", null)
+	var piece_center := piece.position + piece.size * 0.5
+	for child in game.get_children():
+		if not child is Panel or not str(child.name).begins_with("PaperSlot"):
+			continue
+		var slot := child as Panel
+		if not slot.get_rect().has_point(piece_center):
+			continue
+		if bool(slot.get_meta("filled", false)) or str(slot.get_meta("expected_piece", "")) != str(piece.get_meta("piece_id", "")):
+			ScoreStore.record_wrong_answer(int(level_data.get("stage", 0)), int(level_data.get("mission", 0)))
+			feedback.add_theme_color_override("font_color", Color("f2a09a"))
+			feedback.text = str(game_data.get("wrong_feedback", ""))
+			reset_paper_piece(piece)
+			return
+		slot.set_meta("filled", true)
+		piece.set_meta("placed", true)
+		piece.position = slot.position
+		piece.size = slot.size
+		piece.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		piece.z_index = 1
+		feedback.add_theme_color_override("font_color", Color("c9f0d8"))
+		feedback.text = str(game_data.get("correct_feedback", ""))
+		if get_paper_piece_count(game) >= required_count:
+			game.set_meta("completed", true)
+			feedback.text = str(game_data.get("completion_feedback", ""))
+			await get_tree().create_timer(float(game_data.get("completion_delay", 1.2))).timeout
+			if is_instance_valid(game):
+				game.queue_free()
+		return
+	reset_paper_piece(piece)
+
+func reset_paper_piece(piece: TextureRect) -> void:
+	piece.z_index = 0
+	piece.create_tween().tween_property(piece, "position", piece.get_meta("home_position") as Vector2, 0.18)
+
+func get_paper_piece_count(game: Control) -> int:
+	var count := 0
+	for child in game.get_children():
+		if child is TextureRect and bool(child.get_meta("placed", false)):
+			count += 1
+	return count

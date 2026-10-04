@@ -1,0 +1,73 @@
+{
+  "id": "level2_mission1",
+  "stage": 2,
+  "mission": 1,
+  "zoom": 1.2,
+  "background_asset": "l2-0",
+  "move_area_asset": "l2-movearea-mask",
+  "player": {
+    "asset": "avatar",
+    "sprite_sheet": "home",
+    "walk_sprite_asset": "avatar_walk_4_topback",
+    "walk_frames": 4,
+    "walk_frame_size": [543, 724],
+    "walk_fps": 6.0,
+    "walk_front_sprite_asset": "avatar_walk_4_front_right",
+    "walk_front_frames": 4,
+    "walk_front_frame_size": [543, 724],
+    "walk_front_fps": 6.0,
+    "idle_sprite_asset": "avatar_idle_4_topback_stable",
+    "idle_frames": 4,
+    "idle_frame_size": [521.75, 754],
+    "idle_fps": 2.0,
+    "position": [0.49, 0.90],
+    "size": [242, 292],
+    "ground_contact_offset_y": 24.0,
+    "walk_speed": 300.0
+  },
+  "intro": {
+	"notification_sound": "res://assets/sounds/message.mp3",
+    "dialogue": {
+      "presentation": "phone_message",
+      "text": "برای شب ایده‌ها از هوش آپ دعوت‌نامه خواستم؛ انگار برای یک مراسم ناشناس نوشته! برگه را پاره کردم.",
+      "close_text": "درستش می‌کنیم"
+    }
+  },
+  "hotspots": [
+    {
+      "id": "work_desk",
+      "enabled": true,
+      "position": [0.80, 0.78],
+      "radius": 0.045,
+      "is_clue": true,
+      "player_target": [0.56, 0.90],
+      "unlocks": ["computer"],
+      "paper_sort_game": {
+        "background_asset": "l2-computer",
+        "zoom": 1.0,
+        "title": "سفارش چاپ را کامل کن",
+        "instruction": "چهار تکهٔ دعوت‌نامه را روی صفحهٔ لپ‌تاپ بچین.",
+        "pieces": ["p1", "p2", "p3", "p4", "p5", "p6"],
+        "correct_pieces": ["p1", "p2", "p3", "p4"],
+        "correct_feedback": "این تکه سر جای خودش است.",
+        "wrong_feedback": "این تکه به سفارش دعوت‌نامه مربوط نیست؛ دوباره امتحان کن.",
+        "completion_feedback": "حالا ببینیم دعوت‌نامهٔ کامل چه شکلی بوده.",
+        "completion_delay": 1.4
+      }
+    },
+    {
+      "id": "computer",
+      "enabled": false,
+      "position": [0.75, 0.70],
+      "radius": 0.040,
+      "is_clue": true,
+      "player_target": [0.75, 0.84],
+      "dialogue": {
+        "presentation": "thought",
+        "dismiss_on_tap": true,
+        "layout": { "position": [680, 270], "size": [760, 500] },
+        "text": "حالا وقتش است سفارش کامل را برای هوش آپ بفرستم."
+      }
+    }
+  ]
+}
