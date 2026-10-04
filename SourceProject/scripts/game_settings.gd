@@ -63,7 +63,7 @@ func get_level_directory(level_id: String) -> String:
 	return directory if directory.is_valid_int() else "1"
 
 func get_level_asset_path(asset_name: String, level_id := "level1") -> String:
-	return "res://assets/pics/levels/%s/%s/%s.png" % [get_levels_directory(), get_level_directory(level_id), asset_name]
+	return "res://assets/pics/levels/%s/%s/%s.png" % [get_level_directory(level_id), get_levels_directory(), asset_name]
 
 func get_level_texture(asset_name: String, level_id := "level1") -> Texture2D:
 	var path := get_level_asset_path(asset_name, level_id)

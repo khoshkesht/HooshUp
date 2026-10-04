@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d0crm2wb2d3cw"
-path="res://.godot/imported/l1-movearea-mask.png-1c913487e7197ee57e6f2ab08a129476.ctex"
+uid="uid://ckiwh6cges22i"
+path="res://.godot/imported/l2-movearea-mask.png-2f8ba962a613027cddab49e4c3b2db24.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/pics/levels/g/1/l1-movearea-mask.png"
-dest_files=["res://.godot/imported/l1-movearea-mask.png-1c913487e7197ee57e6f2ab08a129476.ctex"]
+source_file="res://assets/pics/levels/2/g/l2-movearea-mask.png"
+dest_files=["res://.godot/imported/l2-movearea-mask.png-2f8ba962a613027cddab49e4c3b2db24.ctex"]
 
 [params]
 

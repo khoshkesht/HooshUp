@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://e0b2ox5acnhl"
-path="res://.godot/imported/l1-0-phone-v3.png-fa7d39a352ddb860bfdee036d4803b46.ctex"
+uid="uid://qm7wlfm5tu76"
+path="res://.godot/imported/l2-movearea-mask.png-182af2471312287297153291d293dd13.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/pics/levels/g/1/l1-0-phone-v3.png"
-dest_files=["res://.godot/imported/l1-0-phone-v3.png-fa7d39a352ddb860bfdee036d4803b46.ctex"]
+source_file="res://assets/pics/levels/2/b/l2-movearea-mask.png"
+dest_files=["res://.godot/imported/l2-movearea-mask.png-182af2471312287297153291d293dd13.ctex"]
 
 [params]
 
