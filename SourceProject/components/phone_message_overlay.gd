@@ -2,6 +2,10 @@ extends Control
 class_name PhoneMessageOverlay
 
 signal closed
+signal sending_finished
+
+const DEFAULT_PHONE_TEXTURE := preload("res://assets/pics/ui/phone-message-new.png")
+const GAMER_PHONE_TEXTURE := preload("res://assets/pics/ui/phone-message-new-gamer.png")
 
 @onready var phone: TextureRect = $Phone
 @onready var screen: Control = $Phone/Screen
@@ -11,6 +15,9 @@ signal closed
 @onready var message_bubble: Control = $Phone/Screen/MessageBubble
 @onready var message_text: Label = $Phone/Screen/MessageBubble/MessageText
 @onready var close_button: Button = $Phone/Screen/CloseButton
+
+var is_sending_message := false
+var sending_request_id := 0
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -28,10 +35,37 @@ func _ready() -> void:
 	hide()
 
 func show_message(message: String, close_text := "بستن") -> void:
+	sending_request_id += 1
+	is_sending_message = false
+	phone.texture = DEFAULT_PHONE_TEXTURE
 	message_text.text = message
 	close_button.text = close_text
+	status.show()
+	conversation_title.show()
+	close_button.show()
+	message_bubble.show()
 	show()
 	refresh_layout()
+
+func show_sending_message(message: String, message_visible_seconds := 1.0, receive_delay_seconds := 3.0) -> void:
+	sending_request_id += 1
+	var request_id := sending_request_id
+	is_sending_message = true
+	phone.texture = GAMER_PHONE_TEXTURE
+	message_text.text = message
+	message_bubble.show()
+	close_button.hide()
+	status.hide()
+	conversation_title.hide()
+	show()
+	refresh_layout()
+	await get_tree().create_timer(message_visible_seconds).timeout
+	if request_id != sending_request_id:
+		return
+	message_bubble.hide()
+	await get_tree().create_timer(receive_delay_seconds).timeout
+	if request_id == sending_request_id:
+		sending_finished.emit()
 
 func close_message() -> void:
 	hide()
@@ -54,8 +88,8 @@ func refresh_layout() -> void:
 	conversation_title.position = Vector2(screen.size.x * 0.31, screen.size.y * 0.105)
 	conversation_title.size = Vector2(screen.size.x * 0.25, 42.0 * scale_factor)
 	conversation_title.add_theme_font_size_override("font_size", roundi(20.0 * scale_factor))
-	message_bubble.position = Vector2(screen.size.x * 0.29, screen.size.y * 0.24)
-	message_bubble.size = Vector2(screen.size.x * 0.62, screen.size.y * 0.35)
+	message_bubble.position = Vector2(screen.size.x * (0.10 if is_sending_message else 0.29), screen.size.y * 0.24)
+	message_bubble.size = Vector2(screen.size.x * (0.80 if is_sending_message else 0.62), screen.size.y * 0.35)
 	message_text.position = Vector2(14.0 * scale_factor, 12.0 * scale_factor)
 	message_text.size = message_bubble.size - Vector2(28.0, 24.0) * scale_factor
 	message_text.add_theme_font_size_override("font_size", roundi(19.0 * scale_factor))

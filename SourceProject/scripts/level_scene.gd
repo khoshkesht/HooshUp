@@ -45,6 +45,8 @@ var monitor_app_rect := Rect2()
 var monitor_app_data: Dictionary = {}
 var read_monitor_tool_ids: Dictionary = {}
 var all_monitor_tools_read := false
+var pending_dialogue_sequence: Array = []
+var pending_dialogue_sequence_index := -1
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -68,6 +70,7 @@ func _ready() -> void:
 	dialogue_panel.choice_selected.connect(_on_dialogue_choice_selected)
 	dialogue_panel.dismiss_requested.connect(_on_dialogue_dismiss_requested)
 	phone_message_overlay.closed.connect(_on_phone_message_closed)
+	phone_message_overlay.sending_finished.connect(_on_phone_sending_finished)
 	stage_progress_panel.closed.connect(_on_stage_progress_closed)
 	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
 	GameSettings.background_music_changed.connect(_on_background_music_changed)
@@ -823,6 +826,10 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 	if not player_target.is_empty():
 		await player_movement.move_to_normalized_position(player_target, str(hotspot_data.get("movement_animation", "")))
 	unlock_hotspots(hotspot_data.get("unlocks", []))
+	var dialogue_sequence: Array = hotspot_data.get("dialogue_sequence", [])
+	if not dialogue_sequence.is_empty():
+		show_dialogue_sequence(dialogue_sequence)
+		return
 	var tool_match_game: Dictionary = hotspot_data.get("tool_match_game", {})
 	if not tool_match_game.is_empty():
 		await show_hotspot_tool_match_game(tool_match_game)
@@ -831,6 +838,10 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 	if not paper_sort_game.is_empty():
 		await show_paper_sort_game(paper_sort_game)
 		close_intro_monitor_scene()
+		var after_paper_sort_dialogue_sequence: Array = hotspot_data.get("after_paper_sort_dialogue_sequence", [])
+		if not after_paper_sort_dialogue_sequence.is_empty():
+			show_dialogue_sequence(after_paper_sort_dialogue_sequence)
+			return
 		show_next_hotspot()
 		return
 	var scripted_monitor_chat: Dictionary = hotspot_data.get("scripted_monitor_chat", {})
@@ -1389,11 +1400,18 @@ func show_tool_match_intro_chat(chat_data: Dictionary) -> void:
 func _on_phone_message_closed() -> void:
 	_on_dialogue_choice_selected("phone_message_closed")
 
+func _on_phone_sending_finished() -> void:
+	notification_sound.stream = load("res://assets/sounds/message.mp3") as AudioStream
+	notification_sound.play()
+	_on_dialogue_choice_selected("phone_sending_finished")
+
 func _on_dialogue_dismiss_requested() -> void:
 	_on_dialogue_choice_selected("dismiss")
 
 func _on_dialogue_choice_selected(_choice_id: String) -> void:
 	dialogue_panel.hide_dialogue()
+	if show_next_dialogue_sequence_entry():
+		return
 	if intro_is_open:
 		intro_is_open = false
 		return
@@ -1418,6 +1436,35 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 				show_next_hotspot()
 		else:
 			show_next_hotspot()
+
+func show_dialogue_sequence(sequence: Array) -> void:
+	pending_dialogue_sequence = sequence
+	pending_dialogue_sequence_index = -1
+	show_next_dialogue_sequence_entry()
+
+func show_next_dialogue_sequence_entry() -> bool:
+	if pending_dialogue_sequence.is_empty():
+		return false
+	pending_dialogue_sequence_index += 1
+	if pending_dialogue_sequence_index >= pending_dialogue_sequence.size():
+		pending_dialogue_sequence.clear()
+		pending_dialogue_sequence_index = -1
+		return false
+	var dialogue: Dictionary = pending_dialogue_sequence[pending_dialogue_sequence_index] as Dictionary
+	if str(dialogue.get("presentation", "")) == "phone_message":
+		phone_message_overlay.show_message(
+			str(dialogue.get("text", "")),
+			str(dialogue.get("close_text", "بستن"))
+		)
+	elif str(dialogue.get("presentation", "")) == "phone_send_message":
+		phone_message_overlay.show_sending_message(
+			str(dialogue.get("text", "")),
+			float(dialogue.get("message_visible_seconds", 1.0)),
+			float(dialogue.get("receive_delay_seconds", 3.0))
+		)
+	else:
+		dialogue_panel.show_dialogue(dialogue)
+	return true
 
 func check_completion() -> void:
 	if not level_data.has("completion_dialogue"):
