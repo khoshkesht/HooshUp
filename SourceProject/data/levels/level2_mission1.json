@@ -29,8 +29,8 @@
 	"notification_sound": "res://assets/sounds/message.mp3",
     "dialogue": {
       "presentation": "phone_message",
-      "text": "برای جلسه ایده‌ها از هوش آپ دعوت‌نامه خواستم؛ انگار برای یک مراسم خیالی نوشته! برگه را پاره کردم.",
-      "close_text": "درستش می‌کنیم"
+      "text": "برای جلسهٔ ایده‌ها از هوش‌آپ دعوت‌نامه خواستم؛ ولی انگار برای یه مراسم خیالی نوشته! کاغذا رو پاره کردم.",
+      "close_text": "بیا درستش کنیم"
     }
   },
   "hotspots": [
@@ -45,25 +45,25 @@
       "paper_sort_game": {
         "background_asset": "l2-computer",
         "zoom": 1.0,
-        "title": "اول ببینم چی نوشته بوده؟!",
-        "instruction": "تکه های دعوت‌نامه را روی صفحهٔ لپ‌تاپ بچین.",
+        "title": "ببینم اصلاً چی نوشته بوده؟!",
+        "instruction": "تکه‌های دعوت‌نامه رو روی صفحهٔ لپ‌تاپ بچین.",
         "pieces": ["p1", "p2", "p3", "p4", "p5", "p6"],
         "correct_pieces": ["p1", "p2", "p3", "p4"],
-        "correct_feedback": "این تکه سر جای خودش است.",
-        "wrong_feedback": "این تکه به سفارش دعوت‌نامه مربوط نیست؛ دوباره امتحان کن.",
-        "completion_feedback": "حالا ببینیم دعوت‌نامهٔ کامل چه شکلی بوده.",
+        "correct_feedback": "آره، این تکه دقیقاً جای خودشه.",
+        "wrong_feedback": "نه، این تکه به این دعوت‌نامه نمی‌خوره؛ یه بار دیگه امتحان کن.",
+        "completion_feedback": "خب، ببینیم دعوت‌نامهٔ کامل چی بوده.",
         "completion_delay": 1.4
       },
       "after_paper_sort_dialogue_sequence": [
         {
           "presentation": "phone_send_message",
-          "text": "معلومه با این اطلاعاتی که دادی که نمیشه. اطلاعات جلسه چیه؟",
+          "text": "با این اطلاعات که دادی، معلومه نمی‌شه! اطلاعات جلسه چی بوده؟",
           "message_visible_seconds": 3.0,
           "receive_delay_seconds": 0.5
         },
         {
           "presentation": "phone_message",
-          "text": "اطلاعات روی بورد هست",
+          "text": "روی بورد نوشته.",
           "close_text": "باشه"
         }
       ]
@@ -71,9 +71,9 @@
     {
       "id": "board",
       "enabled": false,
-      "position": [0.50, 0.27],
-      "radius": 0.045,
-      "player_target": [0.423, 0.915]
+      "position": [0.85, 0.27],
+      "radius": 0.035,
+      "player_target": [0.75, 0.550]
     }
   ]
 }
