@@ -57,6 +57,8 @@ func build_controls() -> void:
 	for stage_number in range(1, GameContent.STAGES.size() + 1):
 		stage_picker.add_item("مرحله %d: %s" % [stage_number, str(GameContent.get_stage(stage_number).get("title", ""))], stage_number)
 	stage_picker.item_selected.connect(_on_stage_selected)
+	# Start the temporary test picker on the level currently under development.
+	stage_picker.select(1)
 
 	add_label("مأموریت", Vector2(36, 150), Vector2(130, 32), 20)
 	mission_picker = OptionButton.new()
@@ -91,6 +93,8 @@ func build_controls() -> void:
 	panel.add_child(launch_button)
 	launch_button.pressed.connect(launch_selected_mission)
 	refresh_mission_picker()
+	mission_picker.select(1)
+	refresh_availability()
 
 func add_label(text_value: String, position_value: Vector2, size_value: Vector2, font_size: int) -> void:
 	var label := Label.new()
@@ -129,6 +133,7 @@ func refresh_availability() -> void:
 func launch_selected_mission() -> void:
 	if launch_button.disabled:
 		return
+	panel.hide()
 	ProgressStore.begin_test_mission(get_selected_stage(), get_selected_mission())
 	get_tree().change_scene_to_file(LEVEL_1_SCENE)
 

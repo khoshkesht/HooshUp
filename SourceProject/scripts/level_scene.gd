@@ -47,6 +47,8 @@ var read_monitor_tool_ids: Dictionary = {}
 var all_monitor_tools_read := false
 var pending_dialogue_sequence: Array = []
 var pending_dialogue_sequence_index := -1
+var pending_dialogue_sequence_completes_mission := false
+var dialogue_sequence_completion_ready := false
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -631,7 +633,7 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 	response_box.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	response_box.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	response_box.add_theme_color_override("font_color", Color(0.04, 0.12, 0.28, 1.0))
-	response_box.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.055))
+	response_box.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.055) + 2)
 	response_box.text = ""
 	chat.add_child(response_box)
 	response_box.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.15)
@@ -643,7 +645,7 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 	question_box.text_direction = Control.TEXT_DIRECTION_RTL
 	question_box.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	question_box.add_theme_color_override("font_color", Color(0.04, 0.12, 0.28, 1.0))
-	question_box.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.038))
+	question_box.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.038) + 2)
 	question_box.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	question_box.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	question_box.text = ""
@@ -840,13 +842,21 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 		close_intro_monitor_scene()
 		var after_paper_sort_dialogue_sequence: Array = hotspot_data.get("after_paper_sort_dialogue_sequence", [])
 		if not after_paper_sort_dialogue_sequence.is_empty():
-			show_dialogue_sequence(after_paper_sort_dialogue_sequence)
+			show_dialogue_sequence(
+				after_paper_sort_dialogue_sequence,
+				bool(hotspot_data.get("complete_mission_after_paper_sort_dialogue_sequence", false))
+			)
 			return
 		show_next_hotspot()
 		return
 	var scripted_monitor_chat: Dictionary = hotspot_data.get("scripted_monitor_chat", {})
 	if not scripted_monitor_chat.is_empty():
 		await show_hotspot_scripted_monitor_chat(scripted_monitor_chat)
+		if bool(hotspot_data.get("complete_mission_after_scripted_monitor_chat", false)):
+			close_intro_monitor_scene()
+			ProgressStore.complete_mission(int(level_data.get("stage", 0)), int(level_data.get("mission", 0)))
+			show_stage_progress()
+			return
 		if bool(hotspot_data.get("return_to_room", false)):
 			var return_delay := float(hotspot_data.get("return_to_room_delay", 0.0))
 			if return_delay > 0.0:
@@ -870,6 +880,14 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 		var presentation_path_game: Dictionary = hotspot_data.get("presentation_path_game", {})
 		if not presentation_path_game.is_empty():
 			await show_presentation_path_game(presentation_path_game)
+		return
+	var clue_connection_game: Dictionary = hotspot_data.get("clue_connection_game", {})
+	if not clue_connection_game.is_empty():
+		if is_instance_valid(current_hotspot):
+			current_hotspot.hide()
+		await show_clue_connection_game(clue_connection_game)
+		if not bool(clue_connection_game.get("complete_mission", false)):
+			show_next_hotspot()
 		return
 	var dialogue: Dictionary = hotspot_data.get("dialogue", {})
 	if dialogue.is_empty():
@@ -1070,7 +1088,7 @@ func show_response_comparison_game(game_data: Dictionary) -> void:
 	board.size = Vector2(game.size.x * 0.72, game.size.y * 0.72)
 	board.position = (game.size - board.size) * 0.5
 	game.add_child(board)
-	var title := make_game_label(str(game_data.get("title", "")), roundi(board.size.y * 0.055), HORIZONTAL_ALIGNMENT_CENTER)
+	var title := make_game_label(str(game_data.get("title", "")), roundi(board.size.y * 0.055) + 3, HORIZONTAL_ALIGNMENT_CENTER)
 	title.name = "Title"
 	title.add_theme_color_override("font_color", Color("294368"))
 	title.position = Vector2(board.size.x * 0.10, board.size.y * 0.07)
@@ -1350,6 +1368,18 @@ func make_choice_game_style(background: Color, border: Color) -> StyleBoxFlat:
 	style.set_content_margin(SIDE_RIGHT, 5.0)
 	return style
 
+func make_sticky_note_style(background: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(5)
+	style.shadow_color = Color(0.14, 0.08, 0.04, 0.38)
+	style.shadow_size = 5
+	style.shadow_offset = Vector2(3, 4)
+	style.set_content_margin_all(12.0)
+	return style
+
 func show_tool_match_intro_chat(chat_data: Dictionary) -> void:
 	var chat := TextureRect.new()
 	chat.name = "ToolMatchIntroChat"
@@ -1412,6 +1442,11 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 	dialogue_panel.hide_dialogue()
 	if show_next_dialogue_sequence_entry():
 		return
+	if dialogue_sequence_completion_ready:
+		dialogue_sequence_completion_ready = false
+		ProgressStore.complete_mission(int(level_data.get("stage", 0)), int(level_data.get("mission", 0)))
+		show_stage_progress()
+		return
 	if intro_is_open:
 		intro_is_open = false
 		return
@@ -1437,9 +1472,11 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 		else:
 			show_next_hotspot()
 
-func show_dialogue_sequence(sequence: Array) -> void:
+func show_dialogue_sequence(sequence: Array, completes_mission := false) -> void:
 	pending_dialogue_sequence = sequence
 	pending_dialogue_sequence_index = -1
+	pending_dialogue_sequence_completes_mission = completes_mission
+	dialogue_sequence_completion_ready = false
 	show_next_dialogue_sequence_entry()
 
 func show_next_dialogue_sequence_entry() -> bool:
@@ -1447,6 +1484,8 @@ func show_next_dialogue_sequence_entry() -> bool:
 		return false
 	pending_dialogue_sequence_index += 1
 	if pending_dialogue_sequence_index >= pending_dialogue_sequence.size():
+		dialogue_sequence_completion_ready = pending_dialogue_sequence_completes_mission
+		pending_dialogue_sequence_completes_mission = false
 		pending_dialogue_sequence.clear()
 		pending_dialogue_sequence_index = -1
 		return false
@@ -1621,3 +1660,161 @@ func get_paper_piece_count(game: Control) -> int:
 		if child is TextureRect and bool(child.get_meta("placed", false)):
 			count += 1
 	return count
+
+func show_clue_connection_game(game_data: Dictionary) -> void:
+	var game := Control.new()
+	game.name = "ClueConnectionGame"
+	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	game.mouse_filter = Control.MOUSE_FILTER_STOP
+	game.z_index = 10
+	game.set_meta("selected_clue", null)
+	game.set_meta("completed", false)
+	# This is a screen minigame, not part of the zoomable room.  Adding it to
+	# the room effects would scale and crop the board with the camera zoom.
+	add_child(game)
+	await get_tree().process_frame
+
+	var dim := ColorRect.new()
+	dim.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.025, 0.035, 0.06, 0.68)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	game.add_child(dim)
+	var board := Panel.new()
+	board.name = "ClueBoard"
+	board.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	# Keep the whole board inside the visible play area, including on shorter screens.
+	board.size = Vector2(game.size.x * 0.90, game.size.y * 0.88)
+	board.position = (game.size - board.size) * 0.5
+	board.add_theme_stylebox_override("panel", make_game_style(Color("6e4932cc"), Color("e8c77d")))
+	game.add_child(board)
+	var title := make_game_label(str(game_data.get("title", "")), roundi(board.size.y * 0.055) + 3, HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_color", Color("fff3cf"))
+	title.position = Vector2(board.size.x * 0.05, board.size.y * 0.04)
+	title.size = Vector2(board.size.x * 0.90, board.size.y * 0.09)
+	board.add_child(title)
+	var instruction := make_game_label(str(game_data.get("instruction", "")), roundi(board.size.y * 0.032) + 3, HORIZONTAL_ALIGNMENT_CENTER)
+	instruction.add_theme_color_override("font_color", Color("f9e6bd"))
+	instruction.position = Vector2(board.size.x * 0.08, board.size.y * 0.13)
+	instruction.size = Vector2(board.size.x * 0.84, board.size.y * 0.07)
+	board.add_child(instruction)
+	var feedback := make_game_label("", roundi(board.size.y * 0.030) + 3, HORIZONTAL_ALIGNMENT_CENTER)
+	feedback.name = "Feedback"
+	feedback.position = Vector2(board.size.x * 0.08, board.size.y * 0.89)
+	feedback.size = Vector2(board.size.x * 0.84, board.size.y * 0.06)
+	board.add_child(feedback)
+
+	var clues: Array = game_data.get("clues", [])
+	var shuffled_clues := clues.duplicate()
+	shuffled_clues.shuffle()
+	var note_colors: Array[Color] = [Color("f7df72"), Color("cce6a4"), Color("aadceb"), Color("f4bd9c")]
+	var note_rotations := [-2.0, 1.5, -1.0, 2.0, 1.0, -1.5, 2.0, -2.0]
+	for index in shuffled_clues.size():
+		var clue: Dictionary = shuffled_clues[index] as Dictionary
+		var clue_button := Button.new()
+		clue_button.name = "Clue%d" % index
+		clue_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
+		clue_button.text_direction = Control.TEXT_DIRECTION_RTL
+		clue_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		clue_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		clue_button.text = str(clue.get("text", ""))
+		clue_button.add_theme_font_size_override("font_size", roundi(board.size.y * 0.030) + 3)
+		clue_button.add_theme_color_override("font_color", Color("33251e"))
+		clue_button.add_theme_color_override("font_hover_color", Color("33251e"))
+		clue_button.add_theme_color_override("font_disabled_color", Color("42604a"))
+		var note_color: Color = note_colors[index % note_colors.size()]
+		clue_button.add_theme_stylebox_override("normal", make_sticky_note_style(note_color, Color("bc9053")))
+		clue_button.add_theme_stylebox_override("hover", make_sticky_note_style(note_color.lightened(0.10), Color("8c6135")))
+		clue_button.position = Vector2(board.size.x * (0.05 + 0.20 * (index % 2)), board.size.y * (0.24 + 0.155 * (index / 2)))
+		clue_button.size = Vector2(board.size.x * 0.18, board.size.y * 0.125)
+		clue_button.pivot_offset = clue_button.size * 0.5
+		clue_button.rotation = deg_to_rad(float(note_rotations[index % note_rotations.size()]))
+		clue_button.set_meta("clue_data", clue)
+		board.add_child(clue_button)
+		clue_button.pressed.connect(_on_clue_connection_clue_pressed.bind(game, board, clue_button, instruction))
+
+	var invitation := Panel.new()
+	invitation.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	invitation.position = Vector2(board.size.x * 0.49, board.size.y * 0.23)
+	invitation.size = Vector2(board.size.x * 0.46, board.size.y * 0.61)
+	invitation.add_theme_stylebox_override("panel", make_game_style(Color("fffaf0"), Color("d7b56b")))
+	board.add_child(invitation)
+	var invitation_title := make_game_label("دعوت‌نامهٔ شب ایده‌ها", roundi(invitation.size.y * 0.065) + 3, HORIZONTAL_ALIGNMENT_CENTER)
+	invitation_title.add_theme_color_override("font_color", Color("5b3a28"))
+	invitation_title.position = Vector2(invitation.size.x * 0.08, invitation.size.y * 0.05)
+	invitation_title.size = Vector2(invitation.size.x * 0.84, invitation.size.y * 0.10)
+	invitation.add_child(invitation_title)
+	var slots: Array = game_data.get("slots", [])
+	for index in slots.size():
+		var slot_data: Dictionary = slots[index] as Dictionary
+		var slot_button := Button.new()
+		slot_button.name = "InvitationSlot%d" % index
+		slot_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
+		slot_button.text_direction = Control.TEXT_DIRECTION_RTL
+		slot_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		slot_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		slot_button.text = "%s: ؟" % str(slot_data.get("label", ""))
+		slot_button.add_theme_font_size_override("font_size", roundi(invitation.size.y * 0.050) + 3)
+		slot_button.add_theme_color_override("font_color", Color("674535"))
+		slot_button.add_theme_color_override("font_hover_color", Color("674535"))
+		slot_button.add_theme_color_override("font_disabled_color", Color("42604a"))
+		slot_button.add_theme_stylebox_override("normal", make_sticky_note_style(Color("fff0a8"), Color("cda96a")))
+		slot_button.add_theme_stylebox_override("hover", make_sticky_note_style(Color("fff6c6"), Color("a87b3c")))
+		slot_button.position = Vector2(invitation.size.x * 0.08, invitation.size.y * (0.19 + 0.145 * index))
+		slot_button.size = Vector2(invitation.size.x * 0.84, invitation.size.y * 0.115)
+		slot_button.set_meta("slot_data", slot_data)
+		invitation.add_child(slot_button)
+		slot_button.pressed.connect(_on_clue_connection_slot_pressed.bind(game, board, slot_button, feedback, instruction, game_data))
+	await game.tree_exited
+
+func _on_clue_connection_clue_pressed(game: Control, board: Panel, clue_button: Button, instruction: Label) -> void:
+	if bool(game.get_meta("completed", false)) or clue_button.disabled:
+		return
+	var previous := game.get_meta("selected_clue", null) as Button
+	if is_instance_valid(previous):
+		previous.modulate = Color.WHITE
+	game.set_meta("selected_clue", clue_button)
+	clue_button.modulate = Color("ffd66f")
+	instruction.text = "حالا بخش درستِ دعوت‌نامه رو انتخاب کن."
+
+func _on_clue_connection_slot_pressed(game: Control, board: Panel, slot_button: Button, feedback: Label, instruction: Label, game_data: Dictionary) -> void:
+	if bool(game.get_meta("completed", false)) or slot_button.disabled:
+		return
+	var clue_button := game.get_meta("selected_clue", null) as Button
+	if not is_instance_valid(clue_button):
+		feedback.add_theme_color_override("font_color", Color("ffd1c4"))
+		feedback.text = "اول یه یادداشت رو انتخاب کن."
+		return
+	var clue_data: Dictionary = clue_button.get_meta("clue_data", {}) as Dictionary
+	var slot_data: Dictionary = slot_button.get_meta("slot_data", {}) as Dictionary
+	if str(clue_data.get("target_id", "")) != str(slot_data.get("id", "")):
+		ScoreStore.record_wrong_answer(int(level_data.get("stage", 0)), int(level_data.get("mission", 0)))
+		feedback.add_theme_color_override("font_color", Color("ffd1c4"))
+		feedback.text = str(game_data.get("wrong_feedback", ""))
+		clue_button.modulate = Color.WHITE
+		game.set_meta("selected_clue", null)
+		instruction.text = str(game_data.get("instruction", ""))
+		return
+	clue_button.disabled = true
+	clue_button.modulate = Color("9fd8b0")
+	slot_button.disabled = true
+	slot_button.text = "%s: %s" % [str(slot_data.get("label", "")), str(clue_data.get("value", ""))]
+	slot_button.add_theme_stylebox_override("disabled", make_sticky_note_style(Color("cde6c9"), Color("76ae7a")))
+	feedback.add_theme_color_override("font_color", Color("d6f1cd"))
+	feedback.text = str(game_data.get("correct_feedback", ""))
+	instruction.text = str(game_data.get("instruction", ""))
+	game.set_meta("selected_clue", null)
+	var filled_count := int(game.get_meta("filled_count", 0)) + 1
+	game.set_meta("filled_count", filled_count)
+	var slots: Array = game_data.get("slots", [])
+	if filled_count < slots.size():
+		return
+	game.set_meta("completed", true)
+	feedback.text = str(game_data.get("completion_feedback", ""))
+	await get_tree().create_timer(float(game_data.get("completion_delay", 1.8))).timeout
+	if is_instance_valid(game):
+		game.queue_free()
+	if bool(game_data.get("complete_mission", false)):
+		ProgressStore.complete_mission(int(level_data.get("stage", 0)), int(level_data.get("mission", 0)))
+		show_stage_progress()

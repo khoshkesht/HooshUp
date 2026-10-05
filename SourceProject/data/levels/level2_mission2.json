@@ -1,0 +1,86 @@
+{
+  "id": "level2_mission2",
+  "stage": 2,
+  "mission": 2,
+  "zoom": 1.4,
+  "background_asset": "l2-0",
+  "move_area_asset": "l2-movearea-mask",
+  "player": {
+    "asset": "avatar",
+    "sprite_sheet": "home",
+    "walk_sprite_asset": "avatar_walk_4_topback",
+    "walk_frames": 4,
+    "walk_frame_size": [543, 724],
+    "walk_fps": 6.0,
+    "walk_front_sprite_asset": "avatar_walk_4_front_right",
+    "walk_front_frames": 4,
+    "walk_front_frame_size": [543, 724],
+    "walk_front_fps": 6.0,
+    "idle_sprite_asset": "avatar_idle_4_topback_stable",
+    "idle_frames": 4,
+    "idle_frame_size": [521.75, 754],
+    "idle_fps": 2.0,
+    "position": [0.18, 0.63],
+    "size": [206, 248],
+    "ground_contact_offset_y": 24.0,
+    "walk_speed": 300.0
+  },
+  "hotspots": [
+    {
+      "id": "board",
+      "enabled": true,
+      "position": [0.85, 0.27],
+      "radius": 0.04,
+      "is_clue": true,
+      "player_target": [0.75, 0.55],
+      "unlocks": ["work_desk"],
+      "clue_connection_game": {
+        "title": "سرنخ‌های شب ایده‌ها",
+        "instruction": "یادداشت‌ها را به جای درستِ دعوت‌نامه وصل کن.",
+        "clues": [
+          { "text": "پنج‌شنبه، ساعت ۱۶", "value": "پنج‌شنبه، ساعت ۱۶", "target_id": "time" },
+          { "text": "سالن اجتماعات", "value": "سالن اجتماعات", "target_id": "place" },
+          { "text": "پایه‌های هفتم تا نهم", "value": "هفتم تا نهم", "target_id": "audience" },
+          { "text": "جلسهٔ ایده‌های خلاق", "value": "ایده‌های خلاق", "target_id": "topic" },
+          { "text": "تمرین بسکتبال؛ پنج‌شنبه، ساعت ۱۶" },
+          { "text": "جشن کتاب‌خوانی؛ سالن اجتماعات" },
+          { "text": "پوستر قدیمیِ جشن مدرسه" }
+        ],
+        "slots": [
+          { "id": "topic", "label": "موضوع" },
+          { "id": "time", "label": "زمان" },
+          { "id": "place", "label": "مکان" },
+          { "id": "audience", "label": "برای" }
+        ],
+        "correct_feedback": "درست شد!",
+        "wrong_feedback": "این یادداشت برای این بخش نیست؛ ۵ امتیاز کم شد. دوباره نگاه کن.",
+        "completion_feedback": "همهٔ جزئیات آماده‌ست؛ بریم سراغ لپ‌تاپ.",
+        "completion_delay": 1.4
+      }
+    },
+    {
+      "id": "work_desk",
+      "enabled": false,
+      "position": [0.80, 0.78],
+      "radius": 0.045,
+      "is_clue": true,
+      "player_target": [0.423, 0.915],
+      "complete_mission_after_scripted_monitor_chat": true,
+      "scripted_monitor_chat": {
+        "background_asset": "l2-computer",
+        "zoom": 1.6,
+        "position": [0.535, 0.54],
+        "size": [0.375, 0.415],
+        "character_delay": 0.02,
+        "steps": [
+          { "role": "assistant", "thinking_delay": 1.5, "text": "سلام! خوش اومدی. امروز چی می‌سازیم؟", "after_delay": 0.7 },
+          { "role": "player", "text": "یه متن دعوت‌نامه برای جلسهٔ ایده‌های خلاق می‌خوام؛ پنج‌شنبه، برای هفتم تا نهم، توی سالن اجتماعات.", "after_delay": 0.7 },
+          { "role": "assistant", "thinking_delay": 1.5, "text": "دعوت‌نامه\nاز دانش‌آموزان پایه‌های هفتم تا نهم دعوت می‌شود در جلسهٔ «ایده‌های خلاق» که روز پنج‌شنبه در سالن اجتماعات برگزار می‌شود، حضور داشته باشند.\nحضور دانش‌آموزان در زمان مقرر مورد انتظار است.", "after_delay": 0.8 },
+          { "role": "player", "text": "اِ… این خیلی رسمی و عجیبه.", "after_delay": 0.7 },
+          { "role": "assistant", "thinking_delay": 1.5, "text": "متن رو با اطلاعاتی که دادی ساختم. به نظرت کجاش نمی‌خونه؟", "after_delay": 0.7 },
+          { "role": "player", "text": "بذار یه کم فکر کنم.", "after_delay": 0.8 }
+        ]
+      }
+    }
+  ]
+}
