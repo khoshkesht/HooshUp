@@ -168,21 +168,8 @@ func show_intro_scripted_monitor_chat(chat_data: Dictionary) -> void:
 
 func show_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	DragGestureHint.show_once(self, "laptop_chat")
-	var chat := TextureRect.new()
-	chat.name = "ScriptedMonitorChat"
-	chat.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	chat.texture = load("res://assets/pics/ui/hooshup-back.png") as Texture2D
-	chat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	chat.stretch_mode = TextureRect.STRETCH_SCALE
-	chat.mouse_filter = Control.MOUSE_FILTER_STOP
-	var normalized_position: Array = chat_data.get("position", [0.5, 0.5])
-	var normalized_size: Array = chat_data.get("size", [0.7, 0.63])
-	effects.add_child(chat)
-	chat.size = Vector2(float(normalized_size[0]) * level_image.size.x, float(normalized_size[1]) * level_image.size.y)
-	chat.position = Vector2(
-		float(normalized_position[0]) * level_image.size.x - chat.size.x * 0.5,
-		float(normalized_position[1]) * level_image.size.y - chat.size.y * 0.5
-	)
+	var chat_surface := create_perspective_chat_surface(chat_data)
+	var chat: TextureRect = chat_surface.get_meta("chat") as TextureRect
 	var response_box := add_monitor_chat_boxes(chat, {}, Callable(), false)
 	var question_box := chat.get_node("Question") as Label
 	var character_delay := float(chat_data.get("character_delay", 0.025))
@@ -206,8 +193,59 @@ func show_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	var research_progress: Dictionary = chat_data.get("research_progress", {})
 	if not research_progress.is_empty():
 		await show_research_progress(chat, response_box, research_progress)
-	if is_instance_valid(chat):
-		chat.queue_free()
+	if is_instance_valid(chat_surface):
+		chat_surface.queue_free()
+
+func create_perspective_chat_surface(chat_data: Dictionary) -> Node2D:
+	var normalized_size: Array = chat_data.get("size", [0.7, 0.63])
+	var chat_size := Vector2(
+		float(normalized_size[0]) * level_image.size.x,
+		float(normalized_size[1]) * level_image.size.y
+	)
+	var surface := Node2D.new()
+	surface.name = "ScriptedMonitorChatSurface"
+	effects.add_child(surface)
+
+	var viewport := SubViewport.new()
+	viewport.transparent_bg = true
+	viewport.handle_input_locally = false
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.size = Vector2i(maxi(1, roundi(chat_size.x)), maxi(1, roundi(chat_size.y)))
+	surface.add_child(viewport)
+
+	var chat := TextureRect.new()
+	chat.name = "ScriptedMonitorChat"
+	chat.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	chat.texture = load("res://assets/pics/ui/hooshup-back.png") as Texture2D
+	chat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	chat.stretch_mode = TextureRect.STRETCH_SCALE
+	chat.mouse_filter = Control.MOUSE_FILTER_STOP
+	chat.size = Vector2(viewport.size)
+	viewport.add_child(chat)
+
+	var normalized_quad: Array = chat_data.get("perspective_quad", [])
+	if normalized_quad.size() != 4:
+		var normalized_position: Array = chat_data.get("position", [0.5, 0.5])
+		var left := float(normalized_position[0]) - float(normalized_size[0]) * 0.5
+		var top := float(normalized_position[1]) - float(normalized_size[1]) * 0.5
+		normalized_quad = [[left, top], [left + float(normalized_size[0]), top], [left + float(normalized_size[0]), top + float(normalized_size[1])], [left, top + float(normalized_size[1])]]
+	var polygon := Polygon2D.new()
+	polygon.texture = viewport.get_texture()
+	polygon.polygon = PackedVector2Array([
+		Vector2(float(normalized_quad[0][0]) * level_image.size.x, float(normalized_quad[0][1]) * level_image.size.y),
+		Vector2(float(normalized_quad[1][0]) * level_image.size.x, float(normalized_quad[1][1]) * level_image.size.y),
+		Vector2(float(normalized_quad[2][0]) * level_image.size.x, float(normalized_quad[2][1]) * level_image.size.y),
+		Vector2(float(normalized_quad[3][0]) * level_image.size.x, float(normalized_quad[3][1]) * level_image.size.y)
+	])
+	polygon.uv = PackedVector2Array([
+		Vector2.ZERO,
+		Vector2(viewport.size.x, 0.0),
+		Vector2(viewport.size),
+		Vector2(0.0, viewport.size.y)
+	])
+	surface.add_child(polygon)
+	surface.set_meta("chat", chat)
+	return surface
 
 func show_research_progress(chat: TextureRect, response_box: Label, progress_data: Dictionary) -> void:
 	response_box.hide()

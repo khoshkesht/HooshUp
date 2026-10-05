@@ -2,7 +2,7 @@ extends Node
 
 const MAP_SCENE := "res://scenes/map.tscn"
 const SPLASH_TEXTURE := preload("res://assets/pics/ui/hoosh-up.png")
-const SPLASH_DURATION_SECONDS := 0.1
+const SPLASH_DURATION_SECONDS := 2
 
 func _ready() -> void:
 	show_splash_and_open_initial_scene()
