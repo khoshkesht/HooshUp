@@ -49,6 +49,7 @@ var pending_dialogue_sequence: Array = []
 var pending_dialogue_sequence_index := -1
 var pending_dialogue_sequence_completes_mission := false
 var dialogue_sequence_completion_ready := false
+var pending_after_dialogue_cue: Dictionary = {}
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -352,9 +353,12 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	var game := Control.new()
 	game.name = "ToolMatchGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game.mouse_filter = Control.MOUSE_FILTER_STOP
-	effects.add_child(game)
+	# This is an on-screen mini-game, not an effect on the zoomed scene image.
+	# Keeping it in the viewport gives its fixed 1280×720 coordinates a stable
+	# canvas on phones and prevents the title and choices from being clipped.
+	stretch_to_fit_viewport.add_child(game)
+	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	await get_tree().process_frame
 
 	var chat := TextureRect.new()
@@ -866,6 +870,7 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 	if not player_target.is_empty():
 		await player_movement.move_to_normalized_position(player_target, str(hotspot_data.get("movement_animation", "")))
 	unlock_hotspots(hotspot_data.get("unlocks", []))
+	pending_after_dialogue_cue = hotspot_data.get("after_dialogue_cue", {})
 	var dialogue_sequence: Array = hotspot_data.get("dialogue_sequence", [])
 	if not dialogue_sequence.is_empty():
 		show_dialogue_sequence(dialogue_sequence)
@@ -1507,8 +1512,22 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 				await load_checkpoint(scene_checkpoint_id)
 			else:
 				show_next_hotspot()
+			play_pending_after_dialogue_cue()
 		else:
 			show_next_hotspot()
+		play_pending_after_dialogue_cue()
+
+func play_pending_after_dialogue_cue() -> void:
+	if pending_after_dialogue_cue.is_empty():
+		return
+	var cue := pending_after_dialogue_cue.duplicate(true)
+	pending_after_dialogue_cue.clear()
+	var sound_path := str(cue.get("sound", ""))
+	if not sound_path.is_empty():
+		notification_sound.stop()
+		notification_sound.stream = load(sound_path) as AudioStream
+		if notification_sound.stream != null:
+			notification_sound.play()
 
 func show_dialogue_sequence(sequence: Array, completes_mission := false) -> void:
 	pending_dialogue_sequence = sequence

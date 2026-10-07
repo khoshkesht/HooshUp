@@ -25,7 +25,7 @@
     "walk_speed": 300.0
   },
   "intro": {
-    "delay_seconds": 5.0,
+    "delay_seconds": 7.0,
     "notification_sound": "res://assets/sounds/message.mp3",
     "alert_hotspot_id": "phone"
   },
@@ -38,6 +38,9 @@
       "is_clue": true,
       "player_target": [0.35, 0.51],
       "unlocks": ["laptop"],
+      "after_dialogue_cue": {
+        "sound": "res://assets/sounds/robot.wav"
+      },
       "dialogue": {
         "presentation": "phone_message",
         "text": "سلام چطوری!\nتحقیق رو آماده کردی؟\nباید تحویل بدیما :(",
