@@ -93,7 +93,7 @@
           "question_character_delay": 0.04,
           "response_wait": 1.5,
           "response_character_delay": 0.02,
-          "after_delay": 0.8,
+          "after_delay": 1.2,
           "send_tooltip": "ارسال",
           "send_indicator": "●"
         },

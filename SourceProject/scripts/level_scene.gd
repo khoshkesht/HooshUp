@@ -18,6 +18,7 @@ const CHAT_BUTTON_COLOR := Color("3badae")
 const CHAT_BUTTON_HOVER_COLOR := Color("54c3c1")
 const CHAT_BUTTON_BORDER_COLOR := Color("8bd8d2")
 const CHAT_BUTTON_DONE_COLOR := Color("6fae9c")
+const MIN_PLAYER_TYPING_CHARACTER_DELAY := 0.035
 
 @onready var level_image: TextureRect = $PanZoomViewport/World/LevelImage
 @onready var pan_zoom_viewport: PanZoomViewport = $PanZoomViewport
@@ -29,7 +30,7 @@ const CHAT_BUTTON_DONE_COLOR := Color("6fae9c")
 @onready var notification_sound: AudioStreamPlayer = $NotificationSound
 @onready var background_music: AudioStreamPlayer = $BackgroundMusic
 @onready var laptop_sound: AudioStreamPlayer = $LaptopSound
-@onready var player_typing_sound: AudioStreamPlayer = $PlayerTypingSound
+@onready var player_typing_sound: ChatTypingSound = $PlayerTypingSound
 @onready var stage_progress_panel: StageProgressPanel = $StageProgressPanel
 
 var level_data: Dictionary
@@ -50,6 +51,7 @@ var pending_dialogue_sequence_index := -1
 var pending_dialogue_sequence_completes_mission := false
 var dialogue_sequence_completion_ready := false
 var pending_after_dialogue_cue: Dictionary = {}
+var hint_dialogue_open := false
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -57,9 +59,6 @@ func _ready() -> void:
 	var background_music_stream := background_music.stream as AudioStreamMP3
 	if background_music_stream != null:
 		background_music_stream.loop = true
-	var typing_stream := player_typing_sound.stream as AudioStreamMP3
-	if typing_stream != null:
-		typing_stream.loop = true
 	GlobalMenu.set_hint_available(true)
 	if not GlobalMenu.hint_requested.is_connected(_on_hint_requested):
 		GlobalMenu.hint_requested.connect(_on_hint_requested)
@@ -107,6 +106,8 @@ func _ready() -> void:
 func _on_hint_requested() -> void:
 	if level_data.is_empty():
 		return
+	if hint_dialogue_open or dialogue_panel.visible or phone_message_overlay.visible:
+		return
 	var stage_number := int(level_data.get("stage", 0))
 	var mission_number := int(level_data.get("mission", 0))
 	if ProgressStore.is_mission_complete(stage_number, mission_number):
@@ -115,6 +116,7 @@ func _on_hint_requested() -> void:
 	if hint_text.is_empty():
 		return
 	ScoreStore.record_hint_used(stage_number, mission_number)
+	hint_dialogue_open = true
 	dialogue_panel.show_dialogue({
 		"presentation": "hint",
 		"dismiss_on_tap": true,
@@ -368,8 +370,13 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	chat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	chat.stretch_mode = TextureRect.STRETCH_SCALE
 	chat.mouse_filter = Control.MOUSE_FILTER_STOP
-	chat.size = Vector2(game.size.x * 0.70, game.size.y * 0.63)
-	chat.position = Vector2(game.size.x * 0.15, game.size.y * 0.145)
+	# Match the same monitor-relative rectangle used by the preceding laptop
+	# chat, while keeping the mini-game root independent from scene-image zoom.
+	chat.size = Vector2(level_image.size.x * 0.70, level_image.size.y * 0.63)
+	chat.position = level_image.global_position - game.global_position + Vector2(
+		level_image.size.x * 0.15,
+		level_image.size.y * 0.145
+	)
 	game.add_child(chat)
 
 	var title := make_game_label(str(game_data.get("title", "")), roundi(chat.size.y * 0.055), HORIZONTAL_ALIGNMENT_CENTER)
@@ -731,17 +738,22 @@ func type_chat_sequence(question_box: Label, question: String, response_box: Lab
 	await type_chat_text(response_box, response)
 
 func type_chat_text(text_box: Label, text: String, character_delay := 0.012, is_player_typing := false) -> void:
-	if is_player_typing:
-		player_typing_sound.play()
+	# Every player message in the هوش آپ chat is rendered in the Question box.
+	# Keep the explicit flag for non-standard chat layouts, while making the
+	# standard path automatic so new callers cannot silently omit its sound.
+	var should_play_typing_sound := is_player_typing or text_box.name == "Question"
+	var effective_character_delay := maxf(character_delay, MIN_PLAYER_TYPING_CHARACTER_DELAY) if should_play_typing_sound else character_delay
+	if should_play_typing_sound:
+		player_typing_sound.start_typing()
 	for character_index in text.length():
 		if not is_instance_valid(text_box):
-			if is_player_typing:
-				player_typing_sound.stop()
+			if should_play_typing_sound:
+				player_typing_sound.stop_typing()
 			return
 		text_box.text = text.substr(0, character_index + 1)
-		await get_tree().create_timer(character_delay).timeout
-	if is_player_typing:
-		player_typing_sound.stop()
+		await get_tree().create_timer(effective_character_delay).timeout
+	if should_play_typing_sound:
+		player_typing_sound.stop_typing()
 
 func _on_monitor_chat_closed(chat: TextureRect) -> void:
 	if is_instance_valid(chat):
@@ -1483,6 +1495,9 @@ func _on_dialogue_dismiss_requested() -> void:
 
 func _on_dialogue_choice_selected(_choice_id: String) -> void:
 	dialogue_panel.hide_dialogue()
+	if hint_dialogue_open:
+		hint_dialogue_open = false
+		return
 	if show_next_dialogue_sequence_entry():
 		return
 	if dialogue_sequence_completion_ready:
@@ -1494,6 +1509,12 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 		intro_is_open = false
 		return
 	if checkpoint_loaded:
+		return
+	if not pending_after_dialogue_cue.is_empty():
+		if is_instance_valid(current_hotspot):
+			current_hotspot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			current_hotspot.hide()
+		play_pending_after_dialogue_cue()
 		return
 	if not hotspots_started:
 		create_hotspots()
@@ -1512,10 +1533,8 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 				await load_checkpoint(scene_checkpoint_id)
 			else:
 				show_next_hotspot()
-			play_pending_after_dialogue_cue()
 		else:
 			show_next_hotspot()
-		play_pending_after_dialogue_cue()
 
 func play_pending_after_dialogue_cue() -> void:
 	if pending_after_dialogue_cue.is_empty():
@@ -1527,7 +1546,15 @@ func play_pending_after_dialogue_cue() -> void:
 		notification_sound.stop()
 		notification_sound.stream = load(sound_path) as AudioStream
 		if notification_sound.stream != null:
-			notification_sound.play()
+			var repeat_count := maxi(1, int(cue.get("sound_repeat_count", 1)))
+			for _repeat_index in repeat_count:
+				notification_sound.play()
+				await notification_sound.finished
+	var dialogue: Dictionary = cue.get("dialogue", {})
+	if not dialogue.is_empty():
+		dialogue_panel.show_dialogue(dialogue)
+	else:
+		call_deferred("_on_dialogue_choice_selected", "after_dialogue_cue_finished")
 
 func show_dialogue_sequence(sequence: Array, completes_mission := false) -> void:
 	pending_dialogue_sequence = sequence
