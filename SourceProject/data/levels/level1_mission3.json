@@ -77,6 +77,7 @@
       },
       "choice_game": {
         "title": "هوش مصنوعی چطور جواب سؤال‌های ما را می‌دهد؟",
+        "choice_font_size_offset": 5,
         "choices": [
           { "text": "مثل یک آدم داخل کامپیوتر فکر می‌کند.", "correct": false },
           { "text": "جواب‌ها را از یک کتاب مخفی پیدا می‌کند.", "correct": false },

@@ -1037,6 +1037,7 @@ func show_choice_game(game_data: Dictionary) -> void:
 
 	var answer_buttons: Array[Button] = []
 	var choices: Array = game_data.get("choices", [])
+	var choice_font_size_offset := int(game_data.get("choice_font_size_offset", 0))
 	for index in choices.size():
 		var choice: Dictionary = choices[index] as Dictionary
 		var button := Button.new()
@@ -1045,7 +1046,7 @@ func show_choice_game(game_data: Dictionary) -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.text = "%d. %s" % [index + 1, str(choice.get("text", ""))]
-		button.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.035))
+		button.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.035) + choice_font_size_offset)
 		button.add_theme_color_override("font_color", Color("ecf7ff"))
 		button.add_theme_stylebox_override("normal", make_choice_game_style(CHAT_BUTTON_COLOR, CHAT_BUTTON_BORDER_COLOR))
 		button.add_theme_stylebox_override("hover", make_choice_game_style(CHAT_BUTTON_HOVER_COLOR, CHAT_BUTTON_BORDER_COLOR))
