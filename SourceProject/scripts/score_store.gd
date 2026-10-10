@@ -49,8 +49,19 @@ func record_mission_pass(stage_number: int, mission_number: int) -> void:
 func record_wrong_answer(stage_number: int, mission_number: int) -> void:
 	record_penalty(stage_number, mission_number, "wrong_answer", get_rule_value("wrong_answer_penalty"))
 
-func record_hint_used(stage_number: int, mission_number: int) -> void:
-	record_penalty(stage_number, mission_number, "hint", get_rule_value("hint_penalty"))
+func record_hint_used(stage_number: int, mission_number: int) -> bool:
+	var hint_cost := get_hint_cost()
+	if hint_cost <= 0 or not can_afford_hint():
+		return false
+	record_penalty(stage_number, mission_number, "hint", hint_cost)
+	return true
+
+func get_hint_cost() -> int:
+	return get_rule_value("hint_penalty")
+
+func can_afford_hint() -> bool:
+	var hint_cost := get_hint_cost()
+	return hint_cost > 0 and get_total_score() >= hint_cost
 
 func record_penalty(stage_number: int, mission_number: int, reason: String, amount: int) -> void:
 	if amount <= 0:

@@ -7,6 +7,7 @@ signal dismiss_requested
 const BUBBLE_TEXTURE := preload("res://assets/pics/ui/bubble.png")
 const HINT_BUBBLE_TEXTURE := preload("res://assets/pics/ui/bubble2.png")
 const THOUGHT_BUBBLE_SIZE := Vector2(1005, 136.8)
+const PROMPT_BUBBLE_SIZE := Vector2(1005, 129.96)
 const THOUGHT_BUBBLE_TOP_LEFT := Vector2(257, 140)
 const THOUGHT_BUBBLE_OPACITY := 0.85
 
@@ -21,13 +22,13 @@ var default_panel_style: StyleBox
 var is_thought := false
 var is_hint := false
 var dismiss_on_tap := false
-var flipped_bubble_texture: Texture2D
-var flipped_hint_bubble_texture: Texture2D
+var thought_bubble_texture: Texture2D
+var prompt_bubble_texture: Texture2D
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
-	flipped_bubble_texture = make_flipped_texture(BUBBLE_TEXTURE)
-	flipped_hint_bubble_texture = make_flipped_texture(HINT_BUBBLE_TEXTURE)
+	thought_bubble_texture = make_flipped_texture(BUBBLE_TEXTURE)
+	prompt_bubble_texture = make_flipped_texture(HINT_BUBBLE_TEXTURE, true)
 	$Panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	for label in [speaker_label, text_label]:
 		label.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -68,13 +69,13 @@ func apply_presentation_style() -> void:
 		return
 	var bubble_style := StyleBoxTexture.new()
 	panel.modulate.a = THOUGHT_BUBBLE_OPACITY
-	bubble_style.texture = flipped_hint_bubble_texture if is_hint else flipped_bubble_texture
+	bubble_style.texture = prompt_bubble_texture if is_hint else thought_bubble_texture
 	# The bubble assets are already cropped. Use their full texture so their
 	# existing 1005px display width and top-left placement remain unchanged.
-	bubble_style.set_content_margin(SIDE_LEFT, 120.0)
-	bubble_style.set_content_margin(SIDE_TOP, 20.0)
-	bubble_style.set_content_margin(SIDE_RIGHT, 50.0)
-	bubble_style.set_content_margin(SIDE_BOTTOM, 20.0)
+	bubble_style.set_content_margin(SIDE_LEFT, 50.0 if is_hint else 120.0)
+	bubble_style.set_content_margin(SIDE_TOP, 24.0 if is_hint else 20.0)
+	bubble_style.set_content_margin(SIDE_RIGHT, 120.0 if is_hint else 50.0)
+	bubble_style.set_content_margin(SIDE_BOTTOM, 14.0 if is_hint else 20.0)
 	panel.add_theme_stylebox_override("panel", bubble_style)
 	text_label.add_theme_color_override("font_color", Color(0.16, 0.11, 0.07, 1.0))
 	text_label.add_theme_font_size_override("font_size", 30)
@@ -88,10 +89,11 @@ func _gui_input(event: InputEvent) -> void:
 func apply_layout(layout: Dictionary) -> void:
 	if layout.is_empty() and not uses_bubble_presentation():
 		return
-	var panel_size: Array = [THOUGHT_BUBBLE_SIZE.x, THOUGHT_BUBBLE_SIZE.y] if uses_bubble_presentation() else layout.get("size", [1040.0, 300.0])
+	var bubble_size := PROMPT_BUBBLE_SIZE if is_hint else THOUGHT_BUBBLE_SIZE
+	var panel_size: Array = [bubble_size.x, bubble_size.y] if uses_bubble_presentation() else layout.get("size", [1040.0, 300.0])
 	var center_position: Array = [
-		THOUGHT_BUBBLE_TOP_LEFT.x + THOUGHT_BUBBLE_SIZE.x * 0.5,
-		THOUGHT_BUBBLE_TOP_LEFT.y + THOUGHT_BUBBLE_SIZE.y * 0.5
+		THOUGHT_BUBBLE_TOP_LEFT.x + bubble_size.x * 0.5,
+		THOUGHT_BUBBLE_TOP_LEFT.y + bubble_size.y * 0.5
 	] if uses_bubble_presentation() else layout.get("position", [640.0, 530.0])
 	panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	panel.size = Vector2(float(panel_size[0]), float(panel_size[1]))
@@ -133,9 +135,11 @@ func add_choice(choice: Dictionary) -> void:
 func uses_bubble_presentation() -> bool:
 	return is_thought or is_hint
 
-func make_flipped_texture(texture: Texture2D) -> Texture2D:
+func make_flipped_texture(texture: Texture2D, flip_vertical := false) -> Texture2D:
 	var image := texture.get_image()
 	if image == null:
 		return texture
 	image.flip_x()
+	if flip_vertical:
+		image.flip_y()
 	return ImageTexture.create_from_image(image)

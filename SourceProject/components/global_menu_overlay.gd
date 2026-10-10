@@ -31,6 +31,9 @@ var hint_available := false
 var gameplay_available := false
 var toolbar: GameToolbar
 var hint_confirmation_panel: PanelContainer
+var hint_confirmation_text: Label
+var hint_cancel_button: Button
+var hint_confirm_button: Button
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -87,6 +90,7 @@ func refresh_layout() -> void:
 func _on_hint_pressed() -> void:
 	if not hint_available or is_open:
 		return
+	configure_hint_confirmation(ScoreStore.can_afford_hint())
 	refresh_hint_visibility()
 	hint_confirmation.show()
 	refresh_hint_visibility()
@@ -122,11 +126,13 @@ func build_hint_confirmation() -> Control:
 	title.add_theme_color_override("font_color", Color("f6c766"))
 	content.add_child(title)
 	var text := make_hint_label("راهنما می‌خوای؟ با این انتخاب ۵ امتیاز کم می‌شود.", 29)
+	hint_confirmation_text = text
 	text.position = Vector2(38, 92)
 	text.size = Vector2(564, 82)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(text)
 	var cancel := make_hint_button("نه، فعلاً نه", Color("314b66"), Color("7190aa"))
+	hint_cancel_button = cancel
 	cancel.position = Vector2(38, 208)
 	cancel.size = Vector2(210, 56)
 	cancel.pressed.connect(func() -> void:
@@ -135,15 +141,35 @@ func build_hint_confirmation() -> Control:
 	)
 	content.add_child(cancel)
 	var confirm := make_hint_button("بله، راهنما را نشان بده", Color("c9792d"), Color("ffd27b"))
+	hint_confirm_button = confirm
 	confirm.position = Vector2(268, 208)
 	confirm.size = Vector2(334, 56)
 	confirm.pressed.connect(func() -> void:
+		if not ScoreStore.can_afford_hint():
+			configure_hint_confirmation(false)
+			return
 		overlay.hide()
 		hint_confirmed.emit()
 		refresh_hint_visibility()
 	)
 	content.add_child(confirm)
 	return overlay
+
+func configure_hint_confirmation(can_afford: bool) -> void:
+	if not is_instance_valid(hint_confirmation_text) or not is_instance_valid(hint_cancel_button) or not is_instance_valid(hint_confirm_button):
+		return
+	if can_afford:
+		hint_confirmation_text.text = "راهنما می‌خوای؟ با این انتخاب %s امتیاز کم می‌شود." % to_persian_digits(ScoreStore.get_hint_cost())
+		hint_cancel_button.text = "نه، فعلاً نه"
+		hint_cancel_button.position = Vector2(38, 208)
+		hint_cancel_button.size = Vector2(210, 56)
+		hint_confirm_button.show()
+		return
+	hint_confirmation_text.text = "امتیاز کافی نداری؛ فعلاً نمی‌تونی این راهنما را ببینی."
+	hint_cancel_button.text = "متوجه شدم"
+	hint_cancel_button.position = Vector2(195, 208)
+	hint_cancel_button.size = Vector2(250, 56)
+	hint_confirm_button.hide()
 
 func make_hint_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

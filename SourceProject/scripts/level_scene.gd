@@ -158,7 +158,8 @@ func _on_hint_requested() -> void:
 	var hint_text := ScoreStore.get_mission_hint(stage_number, mission_number)
 	if hint_text.is_empty():
 		return
-	ScoreStore.record_hint_used(stage_number, mission_number)
+	if not ScoreStore.record_hint_used(stage_number, mission_number):
+		return
 	hint_dialogue_open = true
 	dialogue_panel.show_dialogue({
 		"presentation": "hint",
