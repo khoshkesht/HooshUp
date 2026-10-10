@@ -53,6 +53,30 @@ var dialogue_sequence_completion_ready := false
 var pending_after_dialogue_cue: Dictionary = {}
 var hint_dialogue_open := false
 
+func get_view_settings(view_id: String, fallback_zoom := 1.0) -> Dictionary:
+	var views: Dictionary = level_data.get("views", {})
+	var settings: Dictionary = views.get(view_id, {})
+	if settings.is_empty():
+		push_warning("Missing view settings for: %s" % view_id)
+		return {"zoom": fallback_zoom, "pan_enabled": true}
+	return settings
+
+func get_view_zoom(view_id: String, fallback_zoom := 1.0) -> float:
+	return float(get_view_settings(view_id, fallback_zoom).get("zoom", fallback_zoom))
+
+func get_view_pan_enabled(view_id: String, fallback_enabled := true) -> bool:
+	return bool(get_view_settings(view_id).get("pan_enabled", fallback_enabled))
+
+func apply_room_view() -> void:
+	var room_view_id := str(level_data.get("room_view", "player_room"))
+	pan_zoom_viewport.zoom = get_view_zoom(room_view_id, 1.2)
+	pan_zoom_viewport.set_pan_enabled(get_view_pan_enabled(room_view_id))
+	pan_zoom_viewport.reset_view()
+
+func show_screen_view(view_id: String, texture: Texture2D, fallback_zoom := 1.0) -> void:
+	stretch_to_fit_viewport.set_pan_enabled(get_view_pan_enabled(view_id))
+	stretch_to_fit_viewport.show_scene(texture, get_view_zoom(view_id, fallback_zoom))
+
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
 	background_music.stream = BACKGROUND_MUSIC
@@ -68,7 +92,7 @@ func _ready() -> void:
 	load_level_data()
 	if level_data.is_empty():
 		return
-	pan_zoom_viewport.zoom = float(level_data.get("zoom", pan_zoom_viewport.zoom))
+	apply_room_view()
 	dialogue_panel.choice_selected.connect(_on_dialogue_choice_selected)
 	dialogue_panel.dismiss_requested.connect(_on_dialogue_dismiss_requested)
 	phone_message_overlay.closed.connect(_on_phone_message_closed)
@@ -92,8 +116,7 @@ func _ready() -> void:
 	if saved_checkpoint > 0:
 		await load_checkpoint(saved_checkpoint)
 		return
-	pan_zoom_viewport.set_pan_enabled(true)
-	pan_zoom_viewport.reset_view()
+	apply_room_view()
 	create_player()
 	create_hotspots()
 	var intro_data: Dictionary = level_data.get("intro", {})
@@ -161,9 +184,9 @@ func show_intro_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	stretch_to_fit_viewport.show_scene(
+	show_screen_view("laptop_chat",
 		GameSettings.get_level_texture(str(chat_data.get("background_asset", "l1-1")), level_id),
-		float(chat_data.get("zoom", 1.2))
+		1.2
 	)
 	await get_tree().process_frame
 	await show_scripted_monitor_chat(chat_data)
@@ -275,9 +298,9 @@ func show_intro_monitor_chat(chat_data: Dictionary) -> void:
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	stretch_to_fit_viewport.show_scene(
+	show_screen_view("laptop_chat",
 		GameSettings.get_level_texture(str(chat_data.get("background_asset", "l1-1")), level_id),
-		float(chat_data.get("zoom", 1.2))
+		1.2
 	)
 	await get_tree().process_frame
 	var chat := TextureRect.new()
@@ -348,8 +371,7 @@ func close_intro_monitor_scene() -> void:
 	level_image = $PanZoomViewport/World/LevelImage
 	effects = $PanZoomViewport/World/LevelImage/Effects
 	pan_zoom_viewport.show()
-	pan_zoom_viewport.set_pan_enabled(true)
-	pan_zoom_viewport.reset_view()
+	apply_room_view()
 
 func show_tool_match_game(game_data: Dictionary) -> void:
 	var game := Control.new()
@@ -496,9 +518,9 @@ func load_checkpoint(checkpoint_id: int) -> void:
 	pan_zoom_viewport.hide()
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	stretch_to_fit_viewport.show_scene(
+	show_screen_view("laptop_empty",
 		GameSettings.get_level_texture(str(checkpoint_data.get("background_asset", "")), level_id),
-		float(checkpoint_data.get("zoom", 1.0))
+		1.0
 	)
 	DragGestureHint.show_once(self, "laptop")
 	checkpoint_loaded = true
@@ -961,9 +983,9 @@ func show_hotspot_tool_match_game(game_data: Dictionary) -> void:
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	stretch_to_fit_viewport.show_scene(
+	show_screen_view("laptop_chat",
 		GameSettings.get_level_texture(str(game_data.get("background_asset", "l1-1")), level_id),
-		float(game_data.get("zoom", 1.2))
+		1.2
 	)
 	await get_tree().process_frame
 	var monitor_chat: Dictionary = game_data.get("monitor_chat", {})
@@ -976,9 +998,9 @@ func show_hotspot_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	stretch_to_fit_viewport.show_scene(
+	show_screen_view("laptop_chat",
 		GameSettings.get_level_texture(str(chat_data.get("background_asset", "l1-1")), level_id),
-		float(chat_data.get("zoom", 1.2))
+		1.2
 	)
 	await get_tree().process_frame
 	await show_scripted_monitor_chat(chat_data)
@@ -1605,7 +1627,7 @@ func show_paper_sort_game(game_data: Dictionary) -> void:
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	stretch_to_fit_viewport.show_scene(GameSettings.get_level_texture(str(game_data.get("background_asset", "l2-computer")), level_id), float(game_data.get("zoom", 1.0)))
+	show_screen_view("laptop_empty", GameSettings.get_level_texture(str(game_data.get("background_asset", "l2-computer")), level_id), 1.0)
 	await get_tree().process_frame
 	var game := Control.new()
 	game.name = "PaperSortGame"

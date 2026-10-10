@@ -1,7 +1,8 @@
 extends Control
 
 const LEVEL_1_SCENE := "res://scenes/level1.tscn"
-const MAP_ZOOM := 1.3
+const MAP_VIEW_CONFIG_PATH := "res://data/views/main_map.json"
+const DEFAULT_MAP_ZOOM := 1.3
 const TAP_DRAG_THRESHOLD := 12.0
 const LOCK_TEXTURE := preload("res://assets/pics/ui/lock.png")
 
@@ -16,8 +17,11 @@ const STAGE_LABELS := [
 var is_dragging := false
 var press_position := Vector2.ZERO
 var did_pan := false
+var map_zoom := DEFAULT_MAP_ZOOM
+var pan_enabled := true
 
 func _ready() -> void:
+	load_view_settings()
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
 	map_content.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	map_content.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -30,6 +34,19 @@ func _ready() -> void:
 
 func show_drag_gesture_hint() -> void:
 	DragGestureHint.show_once(self, "map")
+
+func load_view_settings() -> void:
+	var file := FileAccess.open(MAP_VIEW_CONFIG_PATH, FileAccess.READ)
+	if file == null:
+		push_error("Map view settings are missing: %s" % MAP_VIEW_CONFIG_PATH)
+		return
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK or not json.data is Dictionary:
+		push_error("Map view settings are invalid: %s" % MAP_VIEW_CONFIG_PATH)
+		return
+	var settings: Dictionary = json.data
+	map_zoom = float(settings.get("zoom", DEFAULT_MAP_ZOOM))
+	pan_enabled = bool(settings.get("pan_enabled", true))
 
 func add_stage_button(stage_number: int, target_rect: Rect2) -> void:
 	var stage: Dictionary = GameContent.get_stage(stage_number)
@@ -79,7 +96,7 @@ func open_stage(stage_number: int) -> void:
 
 func reset_view() -> void:
 	var cover_scale := ResponsiveLayout.cover_scale(size)
-	map_content.scale = Vector2.ONE * cover_scale * MAP_ZOOM
+	map_content.scale = Vector2.ONE * cover_scale * map_zoom
 	# Keep the campaign's first stages visible when entering the map.
 	map_content.position = ResponsiveLayout.centered_position(size, ResponsiveLayout.DESIGN_SIZE, cover_scale)
 
@@ -89,6 +106,8 @@ func clamp_map_position() -> void:
 	map_content.position.y = clamp(map_content.position.y, minimum_position.y, 0.0)
 
 func _gui_input(event: InputEvent) -> void:
+	if not pan_enabled:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			is_dragging = true

@@ -2,7 +2,11 @@
   "id": "level2_mission2",
   "stage": 2,
   "mission": 2,
-  "zoom": 1.4,
+  "room_view": "school_computer_room",
+  "views": {
+    "school_computer_room": { "zoom": 1.4, "pan_enabled": true },
+    "laptop_chat": { "zoom": 1.6, "pan_enabled": true }
+  },
   "background_asset": "l2-0",
   "move_area_asset": "l2-movearea-mask",
   "player": {
@@ -68,7 +72,6 @@
       "complete_mission_after_scripted_monitor_chat": true,
       "scripted_monitor_chat": {
         "background_asset": "l2-computer",
-        "zoom": 1.6,
         "perspective_quad": [[0.333, 0.323], [0.727, 0.323], [0.740, 0.781], [0.316, 0.781]],
         "position": [0.535, 0.54],
         "size": [0.375, 0.415],

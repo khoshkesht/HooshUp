@@ -4,6 +4,7 @@ class_name StretchToFitViewport
 @onready var scene_image: TextureRect = $SceneImage
 
 var scene_zoom := 1.0
+var pan_enabled := true
 var is_dragging := false
 var press_position := Vector2.ZERO
 var did_pan := false
@@ -23,6 +24,10 @@ func show_scene(texture: Texture2D, zoom_amount := 1.0) -> void:
 	call_deferred("apply_zoom")
 	show()
 
+func set_pan_enabled(enabled: bool) -> void:
+	pan_enabled = enabled
+	is_dragging = false
+
 func apply_zoom() -> void:
 	scene_image.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var scene_scale := ResponsiveLayout.cover_scale(size) * scene_zoom
@@ -39,6 +44,8 @@ func clamp_scene_position() -> void:
 	scene_image.position.y = clamp(scene_image.position.y, minimum_position.y, 0.0)
 
 func _gui_input(event: InputEvent) -> void:
+	if not pan_enabled:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			is_dragging = true

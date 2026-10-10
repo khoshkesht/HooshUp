@@ -2,6 +2,11 @@
   "id": "level1",
   "stage": 1,
   "mission": 1,
+  "room_view": "player_room",
+  "views": {
+    "player_room": { "zoom": 1.2, "pan_enabled": true },
+    "laptop_empty": { "zoom": 1.2, "pan_enabled": true }
+  },
   "background_asset": "l1-0-phone-v3",
   "move_area_asset": "l1-movearea-mask",
   "player": {
@@ -98,7 +103,6 @@
   "checkpoints": {
     "1": {
       "background_asset": "l1-1",
-      "zoom": 1.2,
       "loop_sound": "res://assets/sounds/robot.mp3",
       "animated_logo": {
         "position": [0.5, 0.5],

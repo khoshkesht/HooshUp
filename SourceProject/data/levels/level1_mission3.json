@@ -2,6 +2,11 @@
   "id": "level1_mission3",
   "stage": 1,
   "mission": 3,
+  "room_view": "player_room",
+  "views": {
+    "player_room": { "zoom": 1.2, "pan_enabled": true },
+    "laptop_chat": { "zoom": 1.2, "pan_enabled": true }
+  },
   "background_asset": "l1-0-phone-v3",
   "move_area_asset": "l1-movearea-mask",
   "player": {
@@ -27,7 +32,6 @@
   "intro": {
     "scripted_monitor_chat": {
       "background_asset": "l1-1",
-      "zoom": 1.2,
       "position": [0.50, 0.46],
       "size": [0.70, 0.63],
       "character_delay": 0.025,
@@ -64,7 +68,6 @@
       "player_target": [0.58, 0.60],
       "scripted_monitor_chat": {
         "background_asset": "l1-1",
-        "zoom": 1.2,
         "position": [0.50, 0.46],
         "size": [0.70, 0.63],
         "character_delay": 0.025,

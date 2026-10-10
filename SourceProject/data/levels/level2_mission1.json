@@ -2,7 +2,11 @@
   "id": "level2_mission1",
   "stage": 2,
   "mission": 1,
-  "zoom": 1.4,
+  "room_view": "school_computer_room",
+  "views": {
+    "school_computer_room": { "zoom": 1.4, "pan_enabled": true },
+    "laptop_empty": { "zoom": 1.0, "pan_enabled": true }
+  },
   "background_asset": "l2-0",
   "move_area_asset": "l2-movearea-mask",
   "player": {
@@ -44,7 +48,6 @@
       "complete_mission_after_paper_sort_dialogue_sequence": true,
       "paper_sort_game": {
         "background_asset": "l2-computer",
-        "zoom": 1.0,
         "title": "ببینم اصلاً چی نوشته بوده؟!",
         "instruction": "تکه‌های دعوت‌نامه رو روی صفحهٔ لپ‌تاپ بچین.",
         "pieces": ["p1", "p2", "p3", "p4", "p5", "p6"],

@@ -29,8 +29,7 @@ func show_drag_gesture_hint() -> void:
 	DragGestureHint.show_once(self, "room")
 
 func reset_view() -> void:
-	var zoom_amount := zoom if pan_enabled else 1.0
-	var world_scale := ResponsiveLayout.cover_scale(size) * zoom_amount
+	var world_scale := ResponsiveLayout.cover_scale(size) * zoom
 	world.scale = Vector2.ONE * world_scale
 	world.position = ResponsiveLayout.centered_position(size, ResponsiveLayout.DESIGN_SIZE, world_scale)
 	clamp_world_position()
