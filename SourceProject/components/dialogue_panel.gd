@@ -6,9 +6,9 @@ signal dismiss_requested
 
 const BUBBLE_TEXTURE := preload("res://assets/pics/ui/bubble.png")
 const HINT_BUBBLE_TEXTURE := preload("res://assets/pics/ui/bubble2.png")
-const THOUGHT_BUBBLE_SIZE := Vector2(1005, 144)
-const THOUGHT_BUBBLE_TOP_LEFT := Vector2(18, 18)
-const THOUGHT_BUBBLE_OPACITY := 0.9
+const THOUGHT_BUBBLE_SIZE := Vector2(1005, 136.8)
+const THOUGHT_BUBBLE_TOP_LEFT := Vector2(257, 140)
+const THOUGHT_BUBBLE_OPACITY := 0.85
 
 @onready var speaker_label: Label = $Panel/Margin/Content/MessageHeader/Speaker
 @onready var text_label: Label = $Panel/Margin/Content/Text
@@ -21,9 +21,13 @@ var default_panel_style: StyleBox
 var is_thought := false
 var is_hint := false
 var dismiss_on_tap := false
+var flipped_bubble_texture: Texture2D
+var flipped_hint_bubble_texture: Texture2D
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	flipped_bubble_texture = make_flipped_texture(BUBBLE_TEXTURE)
+	flipped_hint_bubble_texture = make_flipped_texture(HINT_BUBBLE_TEXTURE)
 	$Panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	for label in [speaker_label, text_label]:
 		label.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -64,12 +68,12 @@ func apply_presentation_style() -> void:
 		return
 	var bubble_style := StyleBoxTexture.new()
 	panel.modulate.a = THOUGHT_BUBBLE_OPACITY
-	bubble_style.texture = HINT_BUBBLE_TEXTURE if is_hint else BUBBLE_TEXTURE
+	bubble_style.texture = flipped_hint_bubble_texture if is_hint else flipped_bubble_texture
 	# The bubble assets are already cropped. Use their full texture so their
 	# existing 1005px display width and top-left placement remain unchanged.
-	bubble_style.set_content_margin(SIDE_LEFT, 50.0)
+	bubble_style.set_content_margin(SIDE_LEFT, 120.0)
 	bubble_style.set_content_margin(SIDE_TOP, 20.0)
-	bubble_style.set_content_margin(SIDE_RIGHT, 120.0)
+	bubble_style.set_content_margin(SIDE_RIGHT, 50.0)
 	bubble_style.set_content_margin(SIDE_BOTTOM, 20.0)
 	panel.add_theme_stylebox_override("panel", bubble_style)
 	text_label.add_theme_color_override("font_color", Color(0.16, 0.11, 0.07, 1.0))
@@ -128,3 +132,10 @@ func add_choice(choice: Dictionary) -> void:
 
 func uses_bubble_presentation() -> bool:
 	return is_thought or is_hint
+
+func make_flipped_texture(texture: Texture2D) -> Texture2D:
+	var image := texture.get_image()
+	if image == null:
+		return texture
+	image.flip_x()
+	return ImageTexture.create_from_image(image)

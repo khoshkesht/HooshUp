@@ -3,9 +3,9 @@ extends Control
 signal menu_action_requested(action_id: String)
 signal hint_confirmed
 
-const HINT_ICON := preload("res://assets/pics/ui/hint.png")
+const TOOLBAR_SCENE := preload("res://components/game_toolbar.tscn")
+const TOOLBAR_DISPLAY_SCALE := 0.44
 
-@onready var menu_button: TextureButton = $MenuButton
 @onready var menu_panel: TextureRect = $MenuPanel
 @onready var avatar: TextureRect = $MenuPanel/MenuContent/Avatar
 @onready var user_name: Label = $MenuPanel/MenuContent/UserName
@@ -24,14 +24,18 @@ var is_open := false
 var menu_tween: Tween
 var safe_scale := 1.0
 var safe_origin := Vector2.ZERO
-var hint_button: TextureButton
 var hint_confirmation: Control
 var hint_available := false
+var gameplay_available := false
+var toolbar: GameToolbar
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
-	menu_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	menu_panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	toolbar = TOOLBAR_SCENE.instantiate() as GameToolbar
+	add_child(toolbar)
+	toolbar.menu_requested.connect(toggle_menu)
+	toolbar.hint_requested.connect(_on_hint_pressed)
 	avatar.texture = GameSettings.get_avatar_texture()
 	user_name.text = GameSettings.player_name
 	GameSettings.settings_changed.connect(_on_game_settings_changed)
@@ -48,8 +52,8 @@ func _ready() -> void:
 		button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		button.text_direction = Control.TEXT_DIRECTION_RTL
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_button.pressed.connect(toggle_menu)
-	build_hint_controls()
+	hint_confirmation = build_hint_confirmation()
+	add_child(hint_confirmation)
 	resized.connect(refresh_layout)
 	call_deferred("prepare_menu")
 	refresh_progress_values()
@@ -67,36 +71,17 @@ func refresh_layout() -> void:
 	menu_panel.scale = Vector2.ONE * safe_scale
 	if not is_open:
 		menu_panel.position = get_hidden_menu_position()
-	menu_button.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	menu_button.size = Vector2(88, 88)
-	menu_button.scale = Vector2.ONE * safe_scale
-	menu_button.position = safe_origin + Vector2(1172, 20) * safe_scale
-	if is_instance_valid(hint_button):
-		hint_button.size = Vector2(88, 88)
-		hint_button.scale = Vector2.ONE * safe_scale
-		hint_button.position = safe_origin + Vector2(1172, 116) * safe_scale
+	toolbar.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	toolbar.scale = Vector2.ONE * safe_scale * TOOLBAR_DISPLAY_SCALE
+	toolbar.position = safe_origin + Vector2(18, 14) * safe_scale
 	refresh_hint_visibility()
-
-func build_hint_controls() -> void:
-	hint_button = TextureButton.new()
-	hint_button.name = "HintButton"
-	hint_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	hint_button.texture_normal = HINT_ICON
-	hint_button.ignore_texture_size = true
-	hint_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	hint_button.modulate.a = 0.7
-	hint_button.tooltip_text = "راهنما"
-	hint_button.pressed.connect(_on_hint_pressed)
-	add_child(hint_button)
-
-	hint_confirmation = build_hint_confirmation()
-	add_child(hint_confirmation)
 
 func _on_hint_pressed() -> void:
 	if not hint_available or is_open:
 		return
-	hint_button.hide()
+	refresh_hint_visibility()
 	hint_confirmation.show()
+	refresh_hint_visibility()
 
 func build_hint_confirmation() -> Control:
 	var overlay := Control.new()
@@ -192,11 +177,16 @@ func set_hint_available(is_available: bool) -> void:
 	hint_available = is_available
 	refresh_hint_visibility()
 
+func set_gameplay_available(is_available: bool) -> void:
+	gameplay_available = is_available
+	refresh_hint_visibility()
+
 func refresh_hint_visibility() -> void:
-	if not is_instance_valid(hint_button):
+	if not is_instance_valid(toolbar):
 		return
 	var is_confirmation_open := is_instance_valid(hint_confirmation) and hint_confirmation.visible
-	hint_button.visible = hint_available and not is_open and not is_confirmation_open
+	toolbar.visible = gameplay_available and not is_open and not is_confirmation_open
+	toolbar.set_hint_enabled(hint_available)
 
 func get_hidden_menu_position() -> Vector2:
 	return safe_origin + Vector2(0, -ResponsiveLayout.DESIGN_SIZE.y * safe_scale)
@@ -210,7 +200,6 @@ func toggle_menu() -> void:
 func open_menu() -> void:
 	is_open = true
 	refresh_progress_values()
-	menu_button.hide()
 	refresh_hint_visibility()
 	menu_panel.show()
 	animate_panel(safe_origin, false)
@@ -232,7 +221,6 @@ func animate_panel(target_position: Vector2, hide_after_animation: bool) -> void
 
 func finish_close() -> void:
 	menu_panel.hide()
-	menu_button.show()
 	refresh_hint_visibility()
 
 func _on_exit_pressed() -> void:
@@ -251,12 +239,20 @@ func _on_menu_action_pressed(action_id: String) -> void:
 func _on_game_settings_changed() -> void:
 	user_name.text = GameSettings.player_name
 	avatar.texture = GameSettings.get_avatar_texture()
+	refresh_progress_values()
 
 func refresh_progress_values() -> void:
 	score_value.text = to_persian_digits(ScoreStore.get_total_score())
 	star_value.text = to_persian_digits(ScoreStore.get_total_stars())
 	var active_mission := ProgressStore.get_active_mission()
 	stage_value.text = "%s/%s" % [to_persian_digits(active_mission.x), to_persian_digits(GameContent.STAGES.size())]
+	if is_instance_valid(toolbar):
+		toolbar.set_status(
+			active_mission.x,
+			ScoreStore.get_total_score(),
+			ProgressStore.get_completed_missions(active_mission.x),
+			GameSettings.get_avatar_texture()
+		)
 
 func to_persian_digits(value: int) -> String:
 	var result := str(value)

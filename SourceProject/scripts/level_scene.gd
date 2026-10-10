@@ -102,6 +102,7 @@ func show_screen_view(view_id: String, texture: Texture2D, fallback_zoom := 1.0)
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	GlobalMenu.set_toolbar_visible(true)
 	background_music.stream = BACKGROUND_MUSIC
 	var background_music_stream := background_music.stream as AudioStreamMP3
 	if background_music_stream != null:
@@ -866,6 +867,7 @@ func _on_monitor_chat_closed(chat: TextureRect) -> void:
 
 func show_stage_progress() -> void:
 	GlobalMenu.set_hint_available(false)
+	GlobalMenu.set_toolbar_visible(false)
 	var stage_number := int(level_data.get("stage", 1))
 	stage_progress_panel.show_stage(stage_number, ProgressStore.get_completed_missions(stage_number))
 	stage_progress_panel.show()
@@ -873,6 +875,7 @@ func show_stage_progress() -> void:
 func _on_stage_progress_closed(next_stage: int, next_mission: int) -> void:
 	stage_progress_panel.hide()
 	GlobalMenu.set_hint_available(true)
+	GlobalMenu.set_toolbar_visible(true)
 	ProgressStore.set_active_mission(next_stage, next_mission)
 	mission_advance_requested.emit(next_stage, next_mission)
 	if next_stage == int(level_data.get("stage", 0)):
@@ -880,6 +883,7 @@ func _on_stage_progress_closed(next_stage: int, next_mission: int) -> void:
 
 func _on_stage_badges_requested() -> void:
 	stage_progress_panel.hide()
+	GlobalMenu.set_toolbar_visible(false)
 	GlobalMenu.open_badges(true)
 
 func show_monitor_app_from_rect() -> void:

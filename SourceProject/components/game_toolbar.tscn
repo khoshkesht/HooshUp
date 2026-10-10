@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/game_toolbar.gd" id="1_script"]
+
+[node name="GameToolbar" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1050.0
+offset_bottom = 273.0
+mouse_filter = 2
+script = ExtResource("1_script")

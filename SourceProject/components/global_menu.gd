@@ -16,6 +16,7 @@ var stage_progress_panel: StageProgressPanel
 var badges_panel: BadgesPanel
 var hint_available := false
 var return_to_map_after_badges := false
+var toolbar_requested_visible := true
 
 func _ready() -> void:
 	layer = 20
@@ -25,12 +26,15 @@ func _ready() -> void:
 	menu_overlay.hint_confirmed.connect(_on_hint_confirmed)
 	settings_panel = SETTINGS_PANEL_SCENE.instantiate()
 	add_child(settings_panel)
+	settings_panel.visibility_changed.connect(refresh_gameplay_ui_visibility)
 	stage_progress_panel = STAGE_PROGRESS_PANEL_SCENE.instantiate()
 	stage_progress_panel.hide()
 	add_child(stage_progress_panel)
+	stage_progress_panel.visibility_changed.connect(refresh_gameplay_ui_visibility)
 	stage_progress_panel.closed.connect(_on_stage_progress_closed)
 	badges_panel = BADGES_PANEL_SCENE.instantiate()
 	add_child(badges_panel)
+	badges_panel.visibility_changed.connect(refresh_gameplay_ui_visibility)
 	badges_panel.closed.connect(_on_badges_panel_closed)
 	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
 	# DEVELOPMENT ONLY: remove this block and development_mission_selector.gd before release.
@@ -87,14 +91,32 @@ func _on_stage_badges_requested() -> void:
 	open_badges(true)
 
 func _on_scene_changed(_scene: Node) -> void:
+	toolbar_requested_visible = true
 	refresh_hint_availability()
 
 func refresh_hint_availability() -> void:
 	var current_scene := get_tree().current_scene
 	var is_level_scene := current_scene != null and current_scene.scene_file_path.begins_with("res://scenes/level")
 	set_hint_available(is_level_scene)
+	refresh_gameplay_ui_visibility()
 
 func set_hint_available(is_available: bool) -> void:
 	hint_available = is_available
 	if is_instance_valid(menu_overlay):
 		menu_overlay.set_hint_available(hint_available)
+
+func set_toolbar_visible(is_visible: bool) -> void:
+	toolbar_requested_visible = is_visible
+	refresh_gameplay_ui_visibility()
+
+func refresh_gameplay_ui_visibility() -> void:
+	if not is_instance_valid(menu_overlay):
+		return
+	var current_scene := get_tree().current_scene
+	var is_level_scene := current_scene != null and current_scene.scene_file_path.begins_with("res://scenes/level")
+	var modal_is_open := (
+		(is_instance_valid(settings_panel) and settings_panel.visible)
+		or (is_instance_valid(stage_progress_panel) and stage_progress_panel.visible)
+		or (is_instance_valid(badges_panel) and badges_panel.visible)
+	)
+	menu_overlay.set_gameplay_available(is_level_scene and toolbar_requested_visible and not modal_is_open)

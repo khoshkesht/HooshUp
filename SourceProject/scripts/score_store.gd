@@ -156,6 +156,8 @@ func get_awarded_score(config: ConfigFile) -> int:
 	return total
 
 func get_total_penalties(config: ConfigFile) -> int:
+	if not config.has_section(SCORE_SECTION):
+		return 0
 	var total := 0
 	for key in config.get_section_keys(SCORE_SECTION):
 		if key.begins_with("penalty_"):
@@ -169,6 +171,8 @@ func get_stage_awarded_score(config: ConfigFile, stage_number: int) -> int:
 	return total
 
 func get_stage_penalties(config: ConfigFile, stage_number: int) -> int:
+	if not config.has_section(SCORE_SECTION):
+		return 0
 	var total := 0
 	var prefix := "penalty_%d-" % stage_number
 	for key in config.get_section_keys(SCORE_SECTION):
