@@ -5,6 +5,8 @@ signal hint_confirmed
 
 const TOOLBAR_SCENE := preload("res://components/game_toolbar.tscn")
 const TOOLBAR_DISPLAY_SCALE := 0.44
+const HINT_PANEL_SIZE := Vector2(640, 300)
+const HINT_PANEL_POSITION := Vector2(320, 210)
 
 @onready var menu_panel: TextureRect = $MenuPanel
 @onready var avatar: TextureRect = $MenuPanel/MenuContent/Avatar
@@ -28,6 +30,7 @@ var hint_confirmation: Control
 var hint_available := false
 var gameplay_available := false
 var toolbar: GameToolbar
+var hint_confirmation_panel: PanelContainer
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -74,6 +77,11 @@ func refresh_layout() -> void:
 	toolbar.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	toolbar.scale = Vector2.ONE * safe_scale * TOOLBAR_DISPLAY_SCALE
 	toolbar.position = safe_origin + Vector2(18, 14) * safe_scale
+	if is_instance_valid(hint_confirmation_panel):
+		hint_confirmation_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		hint_confirmation_panel.position = safe_origin + HINT_PANEL_POSITION * safe_scale
+		hint_confirmation_panel.size = HINT_PANEL_SIZE
+		hint_confirmation_panel.scale = Vector2.ONE * safe_scale
 	refresh_hint_visibility()
 
 func _on_hint_pressed() -> void:
@@ -96,12 +104,14 @@ func build_hint_confirmation() -> Control:
 	shade.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.add_child(shade)
 	var panel := PanelContainer.new()
+	panel.name = "Panel"
 	panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-320, -150)
-	panel.size = Vector2(640, 300)
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	panel.position = HINT_PANEL_POSITION
+	panel.size = HINT_PANEL_SIZE
 	panel.add_theme_stylebox_override("panel", make_hint_panel_style())
 	overlay.add_child(panel)
+	hint_confirmation_panel = panel
 	var content := Control.new()
 	content.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

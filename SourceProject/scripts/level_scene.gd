@@ -399,11 +399,17 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	game.mouse_filter = Control.MOUSE_FILTER_STOP
 	# This is an on-screen mini-game, not an effect on the zoomed scene image.
-	# Keeping it in the viewport gives its fixed 1280×720 coordinates a stable
-	# canvas on phones and prevents the title and choices from being clipped.
+	# A contained design canvas keeps every question and choice visible on phones.
 	stretch_to_fit_viewport.add_child(game)
 	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	await get_tree().process_frame
+	var game_canvas := Control.new()
+	game_canvas.name = "SafeCanvas"
+	game_canvas.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	game_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	game.add_child(game_canvas)
+	layout_tool_match_canvas(game, game_canvas)
+	game.resized.connect(layout_tool_match_canvas.bind(game, game_canvas))
 
 	var chat := TextureRect.new()
 	chat.name = "ToolMatchChat"
@@ -412,14 +418,17 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	chat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	chat.stretch_mode = TextureRect.STRETCH_SCALE
 	chat.mouse_filter = Control.MOUSE_FILTER_STOP
-	# Match the same monitor-relative rectangle used by the preceding laptop
-	# chat, while keeping the mini-game root independent from scene-image zoom.
-	chat.size = Vector2(level_image.size.x * 0.70, level_image.size.y * 0.63)
-	chat.position = level_image.global_position - game.global_position + Vector2(
-		level_image.size.x * 0.15,
-		level_image.size.y * 0.145
+	# Match the preceding laptop view in design coordinates, independently from
+	# the cover-scaled scene image used behind it.
+	var laptop_zoom := get_view_zoom("laptop_chat", 1.2)
+	var design_scene_size := ResponsiveLayout.DESIGN_SIZE * laptop_zoom
+	var design_scene_position := (ResponsiveLayout.DESIGN_SIZE - design_scene_size) * 0.5
+	chat.size = Vector2(design_scene_size.x * 0.70, design_scene_size.y * 0.63)
+	chat.position = design_scene_position + Vector2(
+		design_scene_size.x * 0.15,
+		design_scene_size.y * 0.145
 	)
-	game.add_child(chat)
+	game_canvas.add_child(chat)
 
 	var title := make_game_label(str(game_data.get("title", "")), roundi(chat.size.y * 0.055), HORIZONTAL_ALIGNMENT_CENTER)
 	title.add_theme_color_override("font_color", Color("142d4e"))
@@ -460,6 +469,14 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	game.set_meta("tool_match_transitioning", false)
 	game.set_meta("tool_match_data", game_data)
 	render_tool_match_question(game, question_box, feedback, tool_buttons, tasks)
+
+func layout_tool_match_canvas(game: Control, game_canvas: Control) -> void:
+	if not is_instance_valid(game) or not is_instance_valid(game_canvas):
+		return
+	game_canvas.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	game_canvas.size = ResponsiveLayout.DESIGN_SIZE
+	game_canvas.scale = Vector2.ONE * ResponsiveLayout.contain_scale(game.size)
+	game_canvas.position = ResponsiveLayout.safe_origin(game.size)
 
 func render_tool_match_question(game: Control, question_box: Label, feedback: Label, tool_buttons: Array[Button], tasks: Array) -> void:
 	var current_task := int(game.get_meta("tool_match_current_task", 0))
