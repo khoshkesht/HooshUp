@@ -25,7 +25,7 @@
     "idle_frame_size": [521.75, 754],
     "idle_fps": 2.0,
     "position": [0.53, 0.85],
-    "size": [194, 234],
+    "size": [218, 263],
     "ground_contact_offset_y": 24.0,
     "walk_speed": 300.0
   },
@@ -74,6 +74,12 @@
     "view": "laptop_empty",
     "background_asset": "l1-1",
     "loop_sound": "res://assets/sounds/robot.mp3",
+    "updating": {
+      "text": "در حال به‌روزرسانی…",
+      "duration": 4.0,
+      "position": [0.5, 0.5],
+      "size": [560, 140]
+    },
     "animated_logo": {
       "position": [0.5, 0.5],
       "scale": 0.25,
@@ -81,6 +87,7 @@
         "asset": "res://assets/pics/ui/hooshup1.png",
         "position": [0.498, 0.458],
         "size": [0.700, 0.628],
+        "acknowledge_text": "فهمیدم",
         "tools": [
             {
               "id": "plan",

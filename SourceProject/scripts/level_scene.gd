@@ -547,12 +547,71 @@ func show_after_hotspots(step_data: Dictionary) -> void:
 	for effect in effects.get_children():
 		effect.queue_free()
 	await get_tree().process_frame
+	var updating_data: Dictionary = step_data.get("updating", {})
+	if not updating_data.is_empty():
+		await show_update_progress(updating_data)
 	if step_data.has("animated_logo"):
 		show_animated_logo(step_data.get("animated_logo", {}))
 	play_laptop_sound(str(step_data.get("loop_sound", "")))
 	var step_dialogue: Dictionary = step_data.get("dialogue", {})
 	if not step_dialogue.is_empty():
 		dialogue_panel.show_dialogue(step_dialogue)
+
+func show_update_progress(update_data: Dictionary) -> void:
+	var overlay := Control.new()
+	overlay.name = "UpdateProgress"
+	overlay.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	effects.add_child(overlay)
+	overlay.position = Vector2.ZERO
+	overlay.size = level_image.size
+
+	var size_data: Array = update_data.get("size", [560, 140])
+	var panel_size := Vector2(float(size_data[0]), float(size_data[1]))
+	var position_data: Array = update_data.get("position", [0.5, 0.5])
+	var panel_center := Vector2(
+		float(position_data[0]) * level_image.size.x,
+		float(position_data[1]) * level_image.size.y
+	)
+	var panel := Panel.new()
+	panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	panel.position = panel_center - panel_size * 0.5
+	panel.size = panel_size
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel", make_game_style(Color("102741e6"), Color("73d8d0")))
+	overlay.add_child(panel)
+
+	var label := Label.new()
+	label.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	label.text_direction = Control.TEXT_DIRECTION_RTL
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.text = str(update_data.get("text", "در حال به‌روزرسانی…"))
+	label.position = Vector2(24, 16)
+	label.size = Vector2(panel_size.x - 48, 42)
+	label.add_theme_color_override("font_color", Color("f4f8ff"))
+	label.add_theme_font_size_override("font_size", 28)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(label)
+
+	var progress := ProgressBar.new()
+	progress.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	progress.position = Vector2(24, 78)
+	progress.size = Vector2(panel_size.x - 48, 30)
+	progress.min_value = 0.0
+	progress.max_value = 100.0
+	progress.value = 0.0
+	progress.show_percentage = false
+	progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	progress.add_theme_stylebox_override("background", make_game_style(Color("152438"), Color("31546a")))
+	progress.add_theme_stylebox_override("fill", make_game_style(Color("3badae"), Color("8bd8d2")))
+	panel.add_child(progress)
+
+	var tween := create_tween()
+	tween.tween_property(progress, "value", 100.0, maxf(0.1, float(update_data.get("duration", 3.0))))
+	await tween.finished
+	overlay.queue_free()
+	await get_tree().process_frame
 
 func play_laptop_sound(sound_path: String) -> void:
 	laptop_sound.stop()
@@ -644,7 +703,6 @@ func add_monitor_card_buttons(app: TextureRect) -> void:
 		add_monitor_card_check(card, read_monitor_tool_ids.has(tool_id))
 
 func _on_monitor_card_pressed(tool: Dictionary) -> void:
-	mark_monitor_tool_read(str(tool.get("id", "")))
 	for effect in effects.get_children():
 		if effect.name == "MonitorApp":
 			effect.queue_free()
@@ -702,12 +760,17 @@ func show_monitor_chat(tool: Dictionary) -> void:
 	chat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	chat.stretch_mode = TextureRect.STRETCH_SCALE
 	chat.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chat.set_meta("tool_id", str(tool.get("id", "")))
 	effects.add_child(chat)
 	chat.position = monitor_app_rect.position
 	chat.size = monitor_app_rect.size
 	var response_box := add_monitor_chat_boxes(chat, tool)
 	var question_box := chat.get_node("Question") as Label
-	type_chat_sequence(question_box, str(tool.get("title", "#")), response_box, str(tool.get("response", "#")))
+	var acknowledge_button := chat.get_node("Acknowledge") as Button
+	acknowledge_button.hide()
+	await type_chat_sequence(question_box, str(tool.get("title", "#")), response_box, str(tool.get("response", "#")))
+	if is_instance_valid(acknowledge_button):
+		acknowledge_button.show()
 
 func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback := Callable(), show_close := true) -> Label:
 	var response_box := Label.new()
@@ -740,26 +803,26 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 	if not show_close:
 		return response_box
 
+	response_box.size.y = chat.size.y * 0.46
 	var close_button := Button.new()
-	close_button.name = "Close"
-	close_button.flat = true
+	close_button.name = "Acknowledge"
 	close_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	close_button.text = "×"
-	close_button.add_theme_color_override("font_color", Color(0.04, 0.12, 0.28, 1.0))
-	close_button.add_theme_color_override("font_hover_color", Color(0.04, 0.12, 0.28, 1.0))
-	close_button.add_theme_color_override("font_pressed_color", Color(0.04, 0.12, 0.28, 1.0))
-	close_button.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.095))
-	close_button.mouse_default_cursor_shape = Control.CURSOR_ARROW
-	var close_style := StyleBoxEmpty.new()
-	for state in ["normal", "hover", "pressed"]:
-		close_button.add_theme_stylebox_override(state, close_style)
+	close_button.text_direction = Control.TEXT_DIRECTION_RTL
+	close_button.text = str(tool.get("acknowledge_text", monitor_app_data.get("acknowledge_text", "فهمیدم")))
+	close_button.add_theme_color_override("font_color", Color("f4f8ff"))
+	close_button.add_theme_color_override("font_hover_color", Color("ffffff"))
+	close_button.add_theme_color_override("font_pressed_color", Color("e2f7f5"))
+	close_button.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.040) + 2)
+	close_button.add_theme_stylebox_override("normal", make_game_style(Color("3badae"), Color("8bd8d2")))
+	close_button.add_theme_stylebox_override("hover", make_game_style(Color("54c3c1"), Color("8bd8d2")))
+	close_button.add_theme_stylebox_override("pressed", make_game_style(Color("6fae9c"), Color("8bd8d2")))
 	if close_callback.is_valid():
 		close_button.pressed.connect(close_callback.bind(chat))
 	else:
 		close_button.pressed.connect(_on_monitor_chat_closed.bind(chat))
 	chat.add_child(close_button)
-	close_button.position = Vector2(chat.size.x * 0.90, chat.size.y * 0.048)
-	close_button.size = Vector2(chat.size.x * 0.075, chat.size.y * 0.105)
+	close_button.position = Vector2(chat.size.x * 0.68, chat.size.y * 0.64)
+	close_button.size = Vector2(chat.size.x * 0.20, chat.size.y * 0.10)
 	return response_box
 
 func type_chat_sequence(question_box: Label, question: String, response_box: Label, response: String) -> void:
@@ -792,6 +855,8 @@ func type_chat_text(text_box: Label, text: String, character_delay := 0.012, is_
 		player_typing_sound.stop_typing()
 
 func _on_monitor_chat_closed(chat: TextureRect) -> void:
+	if is_instance_valid(chat):
+		mark_monitor_tool_read(str(chat.get_meta("tool_id", "")))
 	if is_instance_valid(chat):
 		chat.queue_free()
 	if all_monitor_tools_read:
