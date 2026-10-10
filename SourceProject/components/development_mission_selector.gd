@@ -2,7 +2,7 @@ class_name DevelopmentMissionSelector
 extends Control
 
 ## Temporary debug-only mission picker. It only forces the selected mission's
-## initial load; normal progress, checkpoints, and score saving remain active.
+## initial load; normal mission completion and score saving remain active.
 ## Remove its instantiation from global_menu.gd (and this file) before release.
 
 const LEVEL_1_SCENE := "res://scenes/level1.tscn"

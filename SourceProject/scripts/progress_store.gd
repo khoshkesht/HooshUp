@@ -3,7 +3,6 @@ extends Node
 const SAVE_NAME := "progress.cfg"
 const LEGACY_SAVE_PATH := "user://progress.cfg"
 const PROGRESS_SECTION := "progress"
-const CHECKPOINTS_SECTION := "checkpoints"
 const BADGES_SECTION := "badges"
 const MISSIONS_PER_STAGE := 5
 
@@ -32,31 +31,6 @@ func is_test_mode() -> bool:
 func consume_test_mission(stage_number: int, mission_number: int) -> void:
 	if is_test_mission(stage_number, mission_number):
 		test_mission = Vector2i.ZERO
-
-func set_checkpoint(stage_number: int, mission_number: int, checkpoint_number: int) -> void:
-	if not is_valid_mission(stage_number, mission_number) or checkpoint_number < 0:
-		push_error("Invalid checkpoint: %d-%d-%d" % [stage_number, mission_number, checkpoint_number])
-		return
-	var config := load_config()
-	config.set_value(CHECKPOINTS_SECTION, get_mission_key(stage_number, mission_number), checkpoint_number)
-	SecureSaveStore.save_config(SAVE_NAME, config)
-
-func get_checkpoint(stage_number: int, mission_number: int) -> int:
-	if not is_valid_mission(stage_number, mission_number):
-		return 0
-	if is_test_mission(stage_number, mission_number):
-		return 0
-	var config := load_config()
-	var mission_key := get_mission_key(stage_number, mission_number)
-	if config.has_section_key(CHECKPOINTS_SECTION, mission_key):
-		return int(config.get_value(CHECKPOINTS_SECTION, mission_key, 0))
-	# Read the former single-checkpoint format once, without letting it overwrite
-	# checkpoints belonging to other missions.
-	var legacy_id := str(config.get_value(PROGRESS_SECTION, "Checkpoint", ""))
-	var parts := legacy_id.split("-")
-	if parts.size() == 3 and int(parts[0]) == stage_number and int(parts[1]) == mission_number:
-		return int(parts[2])
-	return 0
 
 func complete_mission(stage_number: int, mission_number: int) -> void:
 	if not is_valid_mission(stage_number, mission_number):

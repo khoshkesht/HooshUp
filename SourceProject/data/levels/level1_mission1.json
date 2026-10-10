@@ -4,7 +4,7 @@
   "mission": 1,
   "room_view": "player_room",
   "views": {
-    "player_room": { "zoom": 1.2, "pan_enabled": true },
+    "player_room": { "zoom": 1.4, "pan_enabled": true, "show_move_area_mask": false },
     "laptop_empty": { "zoom": 1.2, "pan_enabled": true }
   },
   "background_asset": "l1-0-phone-v3",
@@ -24,8 +24,8 @@
     "idle_frames": 4,
     "idle_frame_size": [521.75, 754],
     "idle_fps": 2.0,
-    "position": [0.53, 0.95],
-    "size": [242, 292],
+    "position": [0.53, 0.85],
+    "size": [194, 234],
     "ground_contact_offset_y": 24.0,
     "walk_speed": 300.0
   },
@@ -45,7 +45,7 @@
       "unlocks": ["laptop"],
       "after_dialogue_cue": {
         "sound": "res://assets/sounds/robot.mp3",
-        "sound_repeat_count": 2,
+        "sound_repeat_count": 1,
         "dialogue": {
           "presentation": "thought",
           "dismiss_on_tap": true,
@@ -68,50 +68,20 @@
       "radius": 0.025,
       "is_clue": true,
       "player_target": [0.58, 0.60]
-    },
-    {
-      "id": "calendar",
-      "enabled": false,
-      "position": [0.067, 0.304],
-      "radius": 0.035,
-      "is_clue": true,
-      "dialogue": {
-        "layout": { "position": [640, 540], "size": [1040, 280] },
-        "text": "وقت زیادی ندارم؛ باید از بچه‌ها هم بپرسم چه‌کار کرده‌اند.",
-        "choices": [
-          { "id": "use_my_books", "text": "شاید از کتاب‌های خودم بتوانم استفاده کنم" }
-        ]
-      }
-    },
-    {
-      "id": "bookcase",
-      "enabled": false,
-      "position": [0.929, 0.781],
-      "radius": 0.04,
-      "is_clue": true,
-      "dialogue": {
-        "layout": { "position": [640, 540], "size": [1040, 280] },
-        "text": "از روی کتاب‌هایی که دارم تحقیق کنم؟",
-        "choices": [
-          { "id": "need_library", "text": "باید برم کتابخونه؟ گوشی چطور؟" }
-        ]
-      }
     }
   ],
-  "checkpoint_after_hotspots": 1,
-  "scene_checkpoint_after_hotspots": 1,
-  "checkpoints": {
-    "1": {
-      "background_asset": "l1-1",
-      "loop_sound": "res://assets/sounds/robot.mp3",
-      "animated_logo": {
-        "position": [0.5, 0.5],
-        "scale": 0.25,
-        "monitor_app": {
-          "asset": "res://assets/pics/ui/hooshup1.png",
-          "position": [0.498, 0.458],
-          "size": [0.700, 0.628],
-          "tools": [
+  "after_hotspots": {
+    "view": "laptop_empty",
+    "background_asset": "l1-1",
+    "loop_sound": "res://assets/sounds/robot.mp3",
+    "animated_logo": {
+      "position": [0.5, 0.5],
+      "scale": 0.25,
+      "monitor_app": {
+        "asset": "res://assets/pics/ui/hooshup1.png",
+        "position": [0.498, 0.458],
+        "size": [0.700, 0.628],
+        "tools": [
             {
               "id": "plan",
               "title": "برنامه‌ریزی کن",
@@ -137,8 +107,7 @@
               "title": "ایده بده",
               "response": "برای پروژه، بازی یا داستان چند ایدهٔ متفاوت پیشنهاد می‌دم.\nبهترین‌ها رو بردار، ترکیب کن و ایدهٔ خودت رو بساز."
             }
-          ]
-        }
+        ]
       }
     }
   }

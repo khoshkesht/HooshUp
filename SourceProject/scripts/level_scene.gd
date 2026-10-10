@@ -38,7 +38,7 @@ var found_clues: Dictionary = {}
 var active_hotspot_index := -1
 var current_hotspot: Hotspot
 var hotspots_started := false
-var checkpoint_loaded := false
+var after_hotspots_active := false
 var player_movement: PlayerMovement
 var intro_is_open := false
 var unlocked_hotspot_ids: Dictionary = {}
@@ -52,6 +52,7 @@ var pending_dialogue_sequence_completes_mission := false
 var dialogue_sequence_completion_ready := false
 var pending_after_dialogue_cue: Dictionary = {}
 var hint_dialogue_open := false
+var move_area_preview: TextureRect
 
 func get_view_settings(view_id: String, fallback_zoom := 1.0) -> Dictionary:
 	var views: Dictionary = level_data.get("views", {})
@@ -72,6 +73,28 @@ func apply_room_view() -> void:
 	pan_zoom_viewport.zoom = get_view_zoom(room_view_id, 1.2)
 	pan_zoom_viewport.set_pan_enabled(get_view_pan_enabled(room_view_id))
 	pan_zoom_viewport.reset_view()
+
+func update_move_area_preview(move_area_texture: Texture2D) -> void:
+	var room_view_id := str(level_data.get("room_view", "player_room"))
+	var settings := get_view_settings(room_view_id)
+	if not bool(settings.get("show_move_area_mask", false)):
+		if is_instance_valid(move_area_preview):
+			move_area_preview.hide()
+		return
+	if not is_instance_valid(move_area_preview):
+		move_area_preview = TextureRect.new()
+		move_area_preview.name = "MoveAreaPreview"
+		move_area_preview.layout_direction = Control.LAYOUT_DIRECTION_LTR
+		move_area_preview.z_index = -15
+		move_area_preview.z_as_relative = false
+		move_area_preview.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		move_area_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		move_area_preview.stretch_mode = TextureRect.STRETCH_SCALE
+		move_area_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		move_area_preview.modulate = Color(1.0, 1.0, 1.0, 0.5)
+		$PanZoomViewport/World/LevelImage.add_child(move_area_preview)
+	move_area_preview.texture = move_area_texture
+	move_area_preview.show()
 
 func show_screen_view(view_id: String, texture: Texture2D, fallback_zoom := 1.0) -> void:
 	stretch_to_fit_viewport.set_pan_enabled(get_view_pan_enabled(view_id))
@@ -109,13 +132,9 @@ func _ready() -> void:
 		await get_tree().process_frame
 		show_stage_progress()
 		return
-	var saved_checkpoint := ProgressStore.get_checkpoint(stage_number, mission_number)
-	# Direct test selection only bypasses the initial completion/checkpoint checks.
+	# Direct test selection only bypasses the initial completion check.
 	# From this point the mission uses normal progress and score persistence.
 	ProgressStore.consume_test_mission(stage_number, mission_number)
-	if saved_checkpoint > 0:
-		await load_checkpoint(saved_checkpoint)
-		return
 	apply_room_view()
 	create_player()
 	create_hotspots()
@@ -509,21 +528,16 @@ func make_game_style(background: Color, border: Color) -> StyleBoxFlat:
 	style.set_corner_radius_all(16)
 	return style
 
-func load_checkpoint(checkpoint_id: int) -> void:
-	var checkpoints: Dictionary = level_data.get("checkpoints", {})
-	var checkpoint_data: Dictionary = checkpoints.get(str(checkpoint_id), {})
-	if checkpoint_data.is_empty():
-		push_error("Checkpoint is missing: %s" % checkpoint_id)
-		return
+func show_after_hotspots(step_data: Dictionary) -> void:
 	pan_zoom_viewport.hide()
 	level_image = stretch_to_fit_viewport.scene_image
 	effects = $StretchToFitViewport/SceneImage/Effects
-	show_screen_view("laptop_empty",
-		GameSettings.get_level_texture(str(checkpoint_data.get("background_asset", "")), level_id),
+	show_screen_view(str(step_data.get("view", "laptop_empty")),
+		GameSettings.get_level_texture(str(step_data.get("background_asset", "")), level_id),
 		1.0
 	)
 	DragGestureHint.show_once(self, "laptop")
-	checkpoint_loaded = true
+	after_hotspots_active = true
 	if is_instance_valid(player_movement):
 		player_movement.hide_player()
 	pan_zoom_viewport.set_pan_enabled(false)
@@ -533,12 +547,12 @@ func load_checkpoint(checkpoint_id: int) -> void:
 	for effect in effects.get_children():
 		effect.queue_free()
 	await get_tree().process_frame
-	if checkpoint_data.has("animated_logo"):
-		show_animated_logo(checkpoint_data.get("animated_logo", {}))
-	play_laptop_sound(str(checkpoint_data.get("loop_sound", "")))
-	var checkpoint_dialogue: Dictionary = checkpoint_data.get("dialogue", {})
-	if not checkpoint_dialogue.is_empty():
-		dialogue_panel.show_dialogue(checkpoint_dialogue)
+	if step_data.has("animated_logo"):
+		show_animated_logo(step_data.get("animated_logo", {}))
+	play_laptop_sound(str(step_data.get("loop_sound", "")))
+	var step_dialogue: Dictionary = step_data.get("dialogue", {})
+	if not step_dialogue.is_empty():
+		dialogue_panel.show_dialogue(step_dialogue)
 
 func play_laptop_sound(sound_path: String) -> void:
 	laptop_sound.stop()
@@ -549,7 +563,7 @@ func play_laptop_sound(sound_path: String) -> void:
 		laptop_sound.play()
 
 func _on_laptop_sound_finished() -> void:
-	if checkpoint_loaded and GameSettings.background_music_enabled and laptop_sound.stream != null:
+	if after_hotspots_active and GameSettings.background_music_enabled and laptop_sound.stream != null:
 		laptop_sound.play()
 
 func _on_background_music_changed(is_enabled: bool) -> void:
@@ -831,7 +845,7 @@ func load_level_data() -> void:
 		push_error("Level data is invalid: %s" % path)
 
 func _on_world_tapped(world_position: Vector2) -> void:
-	if checkpoint_loaded or dialogue_panel.visible or not is_instance_valid(player_movement):
+	if after_hotspots_active or dialogue_panel.visible or not is_instance_valid(player_movement):
 		return
 	var normalized_target := Vector2(
 		world_position.x / level_image.size.x,
@@ -850,6 +864,7 @@ func create_hotspots() -> void:
 func create_player() -> void:
 	var player_data: Dictionary = level_data.get("player", {})
 	var move_area_texture := GameSettings.get_level_texture(str(level_data.get("move_area_asset", "")), level_id)
+	update_move_area_preview(move_area_texture)
 	player_movement = PLAYER_MOVEMENT_SCRIPT.new() as PlayerMovement
 	add_child(player_movement)
 	player_movement.configure(player_data, effects, level_image.size, level_image.texture, move_area_texture, Callable(GameSettings, "get_level_asset_path"), Callable(GameSettings, "get_avatar_asset_path"))
@@ -1531,7 +1546,7 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 	if intro_is_open:
 		intro_is_open = false
 		return
-	if checkpoint_loaded:
+	if after_hotspots_active:
 		return
 	if not pending_after_dialogue_cue.is_empty():
 		if is_instance_valid(current_hotspot):
@@ -1544,16 +1559,9 @@ func _on_dialogue_choice_selected(_choice_id: String) -> void:
 	elif is_instance_valid(current_hotspot):
 		var hotspot_sequence := get_enabled_hotspots()
 		if active_hotspot_index >= hotspot_sequence.size() - 1:
-			var checkpoint_id := int(level_data.get("checkpoint_after_hotspots", 0))
-			var scene_checkpoint_id := int(level_data.get("scene_checkpoint_after_hotspots", checkpoint_id))
-			if scene_checkpoint_id > 0:
-				if checkpoint_id > 0:
-					ProgressStore.set_checkpoint(
-						int(level_data.get("stage", 0)),
-						int(level_data.get("mission", 0)),
-						checkpoint_id
-					)
-				await load_checkpoint(scene_checkpoint_id)
+			var after_hotspots: Dictionary = level_data.get("after_hotspots", {})
+			if not after_hotspots.is_empty():
+				await show_after_hotspots(after_hotspots)
 			else:
 				show_next_hotspot()
 		else:

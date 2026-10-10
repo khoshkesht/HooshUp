@@ -4,7 +4,7 @@
   "mission": 3,
   "room_view": "player_room",
   "views": {
-    "player_room": { "zoom": 1.2, "pan_enabled": true },
+    "player_room": { "zoom": 1.2, "pan_enabled": true, "show_move_area_mask": false },
     "laptop_chat": { "zoom": 1.2, "pan_enabled": true }
   },
   "background_asset": "l1-0-phone-v3",

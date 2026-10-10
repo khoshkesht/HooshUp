@@ -4,7 +4,7 @@
   "mission": 2,
   "room_view": "school_computer_room",
   "views": {
-    "school_computer_room": { "zoom": 1.4, "pan_enabled": true },
+    "school_computer_room": { "zoom": 1.4, "pan_enabled": true, "show_move_area_mask": false },
     "laptop_chat": { "zoom": 1.6, "pan_enabled": true }
   },
   "background_asset": "l2-0",
