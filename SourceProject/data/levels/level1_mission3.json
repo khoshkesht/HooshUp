@@ -91,7 +91,7 @@
         "completion_side_story": {
           "file_name": "پروژه28.dat",
           "file_tooltip": "باز کردن پروژه28.dat",
-          "reveal_sound": "res://assets/sounds/robot.wav",
+          "reveal_sound": "res://assets/sounds/robot.mp3",
           "notepad_timeout_seconds": 10,
           "document_text": "A7#k2!Q9m$4X\\@p8&Z1%r6B\\*3N^5C?0D alpha\\_72! moon#9 ZK4\\@delta88 cloud%31 R2!vector#7 nova\\_204 pixel$5 echo&66 qwerty!9 star#12 beta\\@404 X7!go\\@9 اگر این فایل رو پیدا کردی، یعنی پروژه هنوز..."
         },

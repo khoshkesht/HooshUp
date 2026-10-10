@@ -39,7 +39,7 @@
       "player_target": [0.35, 0.51],
       "unlocks": ["laptop"],
       "after_dialogue_cue": {
-        "sound": "res://assets/sounds/robot.wav",
+        "sound": "res://assets/sounds/robot.mp3",
         "sound_repeat_count": 2,
         "dialogue": {
           "presentation": "thought",
@@ -99,7 +99,7 @@
     "1": {
       "background_asset": "l1-1",
       "zoom": 1.2,
-      "loop_sound": "res://assets/sounds/robot.wav",
+      "loop_sound": "res://assets/sounds/robot.mp3",
       "animated_logo": {
         "position": [0.5, 0.5],
         "scale": 0.25,

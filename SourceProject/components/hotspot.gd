@@ -7,8 +7,8 @@ signal activated
 @export_range(1.0, 10.0, 0.1, "suffix:s") var pulse_duration := 2.6
 @export_range(0.0, 1.0, 0.01) var minimum_alpha := 0.45
 @export_range(0.0, 1.0, 0.01) var maximum_alpha := 0.95
-@export_range(0.0, 1.0, 0.01) var initial_alpha := 0.3
-@export_range(0.0, 5.0, 0.1, "suffix:s") var initial_alpha_duration := 2.0
+@export_range(0.0, 1.0, 0.01) var initial_alpha := 0.1
+@export_range(0.0, 5.0, 0.1, "suffix:s") var initial_alpha_duration := 7.0
 
 var elapsed := 0.0
 var alerting := false
