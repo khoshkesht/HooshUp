@@ -43,6 +43,7 @@ var player_movement: PlayerMovement
 var intro_is_open := false
 var unlocked_hotspot_ids: Dictionary = {}
 var monitor_app_rect := Rect2()
+var monitor_app_design_size := Vector2.ZERO
 var monitor_app_data: Dictionary = {}
 var read_monitor_tool_ids: Dictionary = {}
 var all_monitor_tools_read := false
@@ -53,6 +54,8 @@ var dialogue_sequence_completion_ready := false
 var pending_after_dialogue_cue: Dictionary = {}
 var hint_dialogue_open := false
 var move_area_preview: TextureRect
+var mission_ui_root: MobileUiRoot
+var mission_surfaces: Array[MissionUiSurface] = []
 
 func get_view_settings(view_id: String, fallback_zoom := 1.0) -> Dictionary:
 	var views: Dictionary = level_data.get("views", {})
@@ -106,6 +109,7 @@ func layout_design_viewports() -> void:
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	build_mission_ui()
 	layout_design_viewports()
 	resized.connect(layout_design_viewports)
 	GlobalMenu.set_toolbar_visible(true)
@@ -149,6 +153,41 @@ func _ready() -> void:
 	elif level_data.has("dialogue"):
 		dialogue_panel.show_dialogue(level_data.get("dialogue", {}))
 	await get_tree().process_frame
+
+func build_mission_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "MissionOverlay"
+	layer.layer = 5
+	add_child(layer)
+	mission_ui_root = MobileUiRoot.new()
+	mission_ui_root.name = "MissionUiRoot"
+	mission_ui_root.avoid_virtual_keyboard = true
+	layer.add_child(mission_ui_root)
+	dialogue_panel.reparent(mission_ui_root, false)
+	phone_message_overlay.reparent(mission_ui_root, false)
+	for control in [dialogue_panel, phone_message_overlay]:
+		control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mission_ui_root.safe_area_changed.connect(func(_rect: Rect2) -> void: control.call_deferred("refresh_layout"))
+		control.visibility_changed.connect(func() -> void:
+			if control.visible:
+				mission_ui_root.move_child(control, -1)
+		)
+
+func mount_mission_ui(control: Control, design := Vector2.ZERO) -> void:
+	if control.has_meta("mission_surface"):
+		return
+	var canvas_design := design if design != Vector2.ZERO else level_image.size
+	var surface := MissionUiSurface.mount(mission_ui_root, control, canvas_design)
+	control.set_meta("mission_surface", surface)
+	mission_surfaces.append(surface)
+
+func get_mission_effects() -> Array[Node]:
+	var result: Array[Node] = []
+	result.assign(effects.get_children())
+	for surface in mission_surfaces:
+		if is_instance_valid(surface) and is_instance_valid(surface.content):
+			result.append(surface.content)
+	return result
 
 func _on_hint_requested() -> void:
 	if level_data.is_empty():
@@ -218,11 +257,11 @@ func show_intro_scripted_monitor_chat(chat_data: Dictionary) -> void:
 	close_intro_monitor_scene()
 
 func show_scripted_monitor_chat(chat_data: Dictionary) -> void:
-	DragGestureHint.show_once(self, "laptop_chat")
+	DragGestureHint.show_once(mission_ui_root, "laptop_chat")
 	var chat_surface := create_perspective_chat_surface(chat_data)
 	var chat: TextureRect = chat_surface.get_meta("chat") as TextureRect
 	var response_box := add_monitor_chat_boxes(chat, {}, Callable(), false)
-	var question_box := chat.get_node("Question") as Label
+	var question_box := chat.find_child("Question", true, false) as Label
 	var character_delay := float(chat_data.get("character_delay", 0.025))
 	for step_value in chat_data.get("steps", []):
 		var step: Dictionary = step_value as Dictionary
@@ -318,7 +357,7 @@ func show_research_progress(chat: TextureRect, response_box: Label, progress_dat
 		await get_tree().create_timer(status_delay).timeout
 
 func show_intro_monitor_chat(chat_data: Dictionary) -> void:
-	DragGestureHint.show_once(self, "laptop_chat")
+	DragGestureHint.show_once(mission_ui_root, "laptop_chat")
 	pan_zoom_viewport.hide()
 	pan_zoom_viewport.set_pan_enabled(false)
 	level_image = stretch_to_fit_viewport.scene_image
@@ -344,8 +383,8 @@ func show_intro_monitor_chat(chat_data: Dictionary) -> void:
 		float(normalized_position[1]) * level_image.size.y - chat.size.y * 0.5
 	)
 	var response_box := add_monitor_chat_boxes(chat, chat_data, Callable(), false)
-	var question_box := chat.get_node("Question") as Label
-	var send_button := Button.new()
+	var question_box := chat.find_child("Question", true, false) as Label
+	var send_button := MissionButton.new()
 	send_button.name = "Send"
 	send_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	send_button.flat = true
@@ -369,6 +408,7 @@ func show_intro_monitor_chat(chat_data: Dictionary) -> void:
 	var hint_tween := send_hint.create_tween().set_loops()
 	hint_tween.tween_property(send_hint, "modulate:a", 0.2, 0.55)
 	hint_tween.tween_property(send_hint, "modulate:a", 1.0, 0.55)
+	mount_mission_ui(chat)
 	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.06)), true)
 	send_button.disabled = false
 	await send_button.pressed
@@ -405,7 +445,7 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	game.mouse_filter = Control.MOUSE_FILTER_STOP
 	# This is an on-screen mini-game, not an effect on the zoomed scene image.
 	# A contained design canvas keeps every question and choice visible on phones.
-	stretch_to_fit_viewport.add_child(game)
+	mission_ui_root.add_child(game)
 	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	await get_tree().process_frame
 	var game_canvas := Control.new()
@@ -414,7 +454,7 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	game_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game.add_child(game_canvas)
 	layout_tool_match_canvas(game, game_canvas)
-	game.resized.connect(layout_tool_match_canvas.bind(game, game_canvas))
+
 
 	var chat := TextureRect.new()
 	chat.name = "ToolMatchChat"
@@ -456,7 +496,7 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	var tool_buttons: Array[Button] = []
 	for index in tools.size():
 		var tool: Dictionary = tools[index]
-		var button := Button.new()
+		var button := MissionButton.new()
 		button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		button.text_direction = Control.TEXT_DIRECTION_RTL
 		button.text = "%s  %s" % [str(tool.get("icon", "")), str(tool.get("text", ""))]
@@ -473,6 +513,8 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	game.set_meta("tool_match_current_task", 0)
 	game.set_meta("tool_match_transitioning", false)
 	game.set_meta("tool_match_data", game_data)
+	mount_mission_ui(game_canvas, ResponsiveLayout.WORLD_DESIGN_SIZE)
+	game.tree_exiting.connect(func() -> void: if is_instance_valid(game_canvas): game_canvas.queue_free())
 	render_tool_match_question(game, question_box, feedback, tool_buttons, tasks)
 
 func layout_tool_match_canvas(game: Control, game_canvas: Control) -> void:
@@ -480,8 +522,8 @@ func layout_tool_match_canvas(game: Control, game_canvas: Control) -> void:
 		return
 	game_canvas.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game_canvas.size = ResponsiveLayout.DESIGN_SIZE
-	game_canvas.scale = Vector2.ONE * ResponsiveLayout.contain_scale(game.size)
-	game_canvas.position = ResponsiveLayout.safe_origin(game.size)
+	game_canvas.scale = Vector2.ONE
+	game_canvas.position = Vector2.ZERO
 
 func render_tool_match_question(game: Control, question_box: Label, feedback: Label, tool_buttons: Array[Button], tasks: Array) -> void:
 	var current_task := int(game.get_meta("tool_match_current_task", 0))
@@ -559,7 +601,7 @@ func show_after_hotspots(step_data: Dictionary) -> void:
 		GameSettings.get_level_texture(str(step_data.get("background_asset", "")), level_id),
 		1.0
 	)
-	DragGestureHint.show_once(self, "laptop")
+	DragGestureHint.show_once(mission_ui_root, "laptop")
 	after_hotspots_active = true
 	if is_instance_valid(player_movement):
 		player_movement.hide_player()
@@ -567,7 +609,7 @@ func show_after_hotspots(step_data: Dictionary) -> void:
 	for hotspot in hotspots.get_children():
 		hotspot.queue_free()
 	current_hotspot = null
-	for effect in effects.get_children():
+	for effect in get_mission_effects():
 		effect.queue_free()
 	await get_tree().process_frame
 	var updating_data: Dictionary = step_data.get("updating", {})
@@ -630,6 +672,7 @@ func show_update_progress(update_data: Dictionary) -> void:
 	progress.add_theme_stylebox_override("fill", make_game_style(Color("3badae"), Color("8bd8d2")))
 	panel.add_child(progress)
 
+	mount_mission_ui(overlay)
 	var tween := create_tween()
 	tween.tween_property(progress, "value", 100.0, maxf(0.1, float(update_data.get("duration", 3.0))))
 	await tween.finished
@@ -678,7 +721,7 @@ func _on_animated_logo_activated(logo: Node2D, logo_data: Dictionary) -> void:
 	show_monitor_app(monitor_app)
 
 func show_monitor_app(app_data: Dictionary) -> void:
-	DragGestureHint.show_once(self, "laptop")
+	DragGestureHint.show_once(mission_ui_root, "laptop")
 	monitor_app_data = app_data
 	var asset_path := str(app_data.get("asset", ""))
 	var texture := load(asset_path) as Texture2D
@@ -701,7 +744,9 @@ func show_monitor_app(app_data: Dictionary) -> void:
 		float(normalized_position[1]) * level_image.size.y - app.size.y * 0.5
 	)
 	monitor_app_rect = Rect2(app.position, app.size)
+	monitor_app_design_size = level_image.size
 	add_monitor_card_buttons(app)
+	mount_mission_ui(app, monitor_app_design_size)
 
 func add_monitor_card_buttons(app: TextureRect) -> void:
 	var card_order := ["idea", "write", "image", "explain", "plan"]
@@ -713,7 +758,7 @@ func add_monitor_card_buttons(app: TextureRect) -> void:
 		var tool: Dictionary = tools_by_id.get(str(card_order[card_index]), {})
 		if tool.is_empty():
 			continue
-		var card := Button.new()
+		var card := MissionButton.new()
 		var tool_id := str(tool.get("id", ""))
 		card.name = "Card_%s" % tool_id
 		card.flat = true
@@ -726,7 +771,7 @@ func add_monitor_card_buttons(app: TextureRect) -> void:
 		add_monitor_card_check(card, read_monitor_tool_ids.has(tool_id))
 
 func _on_monitor_card_pressed(tool: Dictionary) -> void:
-	for effect in effects.get_children():
+	for effect in get_mission_effects():
 		if effect.name == "MonitorApp":
 			effect.queue_free()
 	show_monitor_chat(tool)
@@ -775,7 +820,7 @@ func has_read_all_monitor_tools() -> bool:
 	return all_monitor_tools_read
 
 func show_monitor_chat(tool: Dictionary) -> void:
-	DragGestureHint.show_once(self, "laptop_chat")
+	DragGestureHint.show_once(mission_ui_root, "laptop_chat")
 	var chat := TextureRect.new()
 	chat.name = "MonitorChat"
 	chat.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -788,9 +833,10 @@ func show_monitor_chat(tool: Dictionary) -> void:
 	chat.position = monitor_app_rect.position
 	chat.size = monitor_app_rect.size
 	var response_box := add_monitor_chat_boxes(chat, tool)
-	var question_box := chat.get_node("Question") as Label
+	var question_box := chat.find_child("Question", true, false) as Label
 	var acknowledge_button := chat.get_node("Acknowledge") as Button
 	acknowledge_button.hide()
+	mount_mission_ui(chat, monitor_app_design_size)
 	await type_chat_sequence(question_box, str(tool.get("title", "#")), response_box, str(tool.get("response", "#")))
 	if is_instance_valid(acknowledge_button):
 		acknowledge_button.show()
@@ -824,10 +870,12 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 	question_box.position = Vector2(chat.size.x * 0.18, chat.size.y * 0.82)
 	question_box.size = Vector2(chat.size.x * 0.65, chat.size.y * 0.10)
 	if not show_close:
+		MissionUiSurface.scroll_text(response_box)
+		MissionUiSurface.scroll_text(question_box)
 		return response_box
 
 	response_box.size.y = chat.size.y * 0.46
-	var close_button := Button.new()
+	var close_button := MissionButton.new()
 	close_button.name = "Acknowledge"
 	close_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	close_button.text_direction = Control.TEXT_DIRECTION_RTL
@@ -846,6 +894,8 @@ func add_monitor_chat_boxes(chat: TextureRect, tool: Dictionary, close_callback 
 	chat.add_child(close_button)
 	close_button.position = Vector2(chat.size.x * 0.68, chat.size.y * 0.64)
 	close_button.size = Vector2(chat.size.x * 0.20, chat.size.y * 0.10)
+	MissionUiSurface.scroll_text(response_box)
+	MissionUiSurface.scroll_text(question_box)
 	return response_box
 
 func type_chat_sequence(question_box: Label, question: String, response_box: Label, response: String) -> void:
@@ -874,6 +924,10 @@ func type_chat_text(text_box: Label, text: String, character_delay := 0.012, is_
 			return
 		text_box.text = text.substr(0, character_index + 1)
 		await get_tree().create_timer(effective_character_delay).timeout
+		# چت پرسپکتیوی نمایشی است؛ ادامهٔ متن تایپ‌شده در همان باکس دیده می‌شود.
+		if is_instance_valid(text_box) and text_box.get_viewport() is SubViewport and text_box.get_parent() is ScrollContainer:
+			var scroll := text_box.get_parent() as ScrollContainer
+			scroll.scroll_vertical = roundi(scroll.get_v_scroll_bar().max_value)
 	if should_play_typing_sound:
 		player_typing_sound.stop_typing()
 
@@ -919,6 +973,7 @@ func show_monitor_app_from_rect() -> void:
 	app.position = monitor_app_rect.position
 	app.size = monitor_app_rect.size
 	add_monitor_card_buttons(app)
+	mount_mission_ui(app, monitor_app_design_size)
 
 func load_level_data() -> void:
 	var active_mission := ProgressStore.get_active_mission()
@@ -1167,7 +1222,7 @@ func show_choice_game(game_data: Dictionary) -> void:
 	var choice_font_size_offset := int(game_data.get("choice_font_size_offset", 0))
 	for index in choices.size():
 		var choice: Dictionary = choices[index] as Dictionary
-		var button := Button.new()
+		var button := MissionButton.new()
 		button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		button.text_direction = Control.TEXT_DIRECTION_RTL
 		button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1183,6 +1238,7 @@ func show_choice_game(game_data: Dictionary) -> void:
 		chat.add_child(button)
 		answer_buttons.append(button)
 		button.pressed.connect(_on_choice_game_answer_pressed.bind(game, game_data, button, title, feedback, answer_buttons))
+	mount_mission_ui(game)
 	await game.tree_exited
 
 func show_presentation_path_game(game_data: Dictionary) -> void:
@@ -1190,6 +1246,11 @@ func show_presentation_path_game(game_data: Dictionary) -> void:
 	game.name = "PresentationPathGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	effects.add_child(game)
+	game.center_board()
+	game.set_meta("mission_surface", true)
+	game.custom_minimum_size = Vector2.ZERO
+	var surface := MissionUiSurface.mount(mission_ui_root, game, game.size)
+	mission_surfaces.append(surface)
 	game.incorrect_route_attempted.connect(_on_presentation_path_incorrect_route)
 	await game.completed
 	if is_instance_valid(game):
@@ -1245,6 +1306,7 @@ func show_presentation_success(game_data: Dictionary) -> void:
 	p28.position = Vector2(panel.size.x * 0.10, panel.size.y * 0.79)
 	p28.size = Vector2(panel.size.x * 0.80, panel.size.y * 0.08)
 	panel.add_child(p28)
+	mount_mission_ui(overlay)
 	await get_tree().create_timer(2.5).timeout
 	if is_instance_valid(overlay):
 		overlay.queue_free()
@@ -1281,7 +1343,7 @@ func show_response_comparison_game(game_data: Dictionary) -> void:
 	var response_buttons: Array[Button] = []
 	for index in (game_data.get("responses", []) as Array).size():
 		var response: Dictionary = (game_data.get("responses", []) as Array)[index] as Dictionary
-		var button := Button.new()
+		var button := MissionButton.new()
 		button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		button.text_direction = Control.TEXT_DIRECTION_RTL
 		button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1297,6 +1359,7 @@ func show_response_comparison_game(game_data: Dictionary) -> void:
 		board.add_child(button)
 		response_buttons.append(button)
 		button.pressed.connect(_on_response_card_pressed.bind(game, button, response_buttons, title, game_data))
+	mount_mission_ui(game)
 	await game.tree_exited
 
 func _on_response_card_pressed(game: Control, button: Button, response_buttons: Array[Button], title: Label, game_data: Dictionary) -> void:
@@ -1365,11 +1428,13 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 	chat.size = Vector2(level_image.size.x * 0.70, level_image.size.y * 0.63)
 	chat.position = Vector2(level_image.size.x * 0.15, level_image.size.y * 0.145)
 	var response_box := add_monitor_chat_boxes(chat, {}, Callable(), false)
-	var question_box := chat.get_node("Question") as Label
+	var question_box := chat.find_child("Question", true, false) as Label
 	question_box.hide()
-	response_box.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.15)
-	response_box.size = Vector2(chat.size.x * 0.74, chat.size.y * 0.22)
+	var response_scroll := response_box.get_parent() as ScrollContainer
+	response_scroll.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.15)
+	response_scroll.size = Vector2(chat.size.x * 0.74, chat.size.y * 0.22)
 	response_box.text = "..."
+	mount_mission_ui(chat)
 	await get_tree().create_timer(1.5).timeout
 	response_box.text = ""
 	await type_chat_text(response_box, str(game_data.get("final_question", "")), float(game_data.get("character_delay", 0.025)))
@@ -1382,7 +1447,7 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 	var choices: Array[Button] = []
 	for index in (game_data.get("responses", []) as Array).size():
 		var response: Dictionary = (game_data.get("responses", []) as Array)[index] as Dictionary
-		var choice := Button.new()
+		var choice := MissionButton.new()
 		choice.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		choice.text_direction = Control.TEXT_DIRECTION_RTL
 		choice.alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1397,6 +1462,7 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 		chat.add_child(choice)
 		choices.append(choice)
 		choice.pressed.connect(_on_response_comparison_final_choice_pressed.bind(chat, choice, feedback, choices, game_data))
+	mount_mission_ui(chat)
 	await chat.tree_exited
 
 func _on_response_comparison_final_choice_pressed(chat: TextureRect, choice: Button, feedback: Label, choices: Array[Button], game_data: Dictionary) -> void:
@@ -1471,7 +1537,7 @@ func show_completion_side_story(story_data: Dictionary) -> void:
 	effects.add_child(overlay)
 	await get_tree().process_frame
 
-	var file_button := Button.new()
+	var file_button := MissionButton.new()
 	file_button.name = "Project28File"
 	file_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	file_button.flat = true
@@ -1512,6 +1578,7 @@ func show_completion_side_story(story_data: Dictionary) -> void:
 	file_name.position = Vector2(0, file_button.size.y * 0.69)
 	file_name.size = Vector2(file_button.size.x, file_button.size.y * 0.25)
 
+	mount_mission_ui(overlay)
 	await file_button.pressed
 	file_button.hide()
 	var notepad := TextureRect.new()
@@ -1575,8 +1642,8 @@ func show_tool_match_intro_chat(chat_data: Dictionary) -> void:
 	chat.size = Vector2(level_image.size.x * 0.70, level_image.size.y * 0.63)
 	chat.position = Vector2(level_image.size.x * 0.15, level_image.size.y * 0.145)
 	var response_box := add_monitor_chat_boxes(chat, chat_data, Callable(), false)
-	var question_box := chat.get_node("Question") as Label
-	var send_button := Button.new()
+	var question_box := chat.find_child("Question", true, false) as Label
+	var send_button := MissionButton.new()
 	send_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	send_button.flat = true
 	send_button.disabled = true
@@ -1597,6 +1664,7 @@ func show_tool_match_intro_chat(chat_data: Dictionary) -> void:
 	var hint_tween := send_hint.create_tween().set_loops()
 	hint_tween.tween_property(send_hint, "modulate:a", 0.2, 0.55)
 	hint_tween.tween_property(send_hint, "modulate:a", 1.0, 0.55)
+	mount_mission_ui(chat)
 	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.04)), true)
 	send_button.disabled = false
 	await send_button.pressed
@@ -1778,11 +1846,13 @@ func show_paper_sort_game(game_data: Dictionary) -> void:
 		piece.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		piece.mouse_filter = Control.MOUSE_FILTER_STOP
 		piece.set_meta("piece_id", str(piece_ids[index]))
+		piece.set_meta("home_normalized", piece_positions[index])
 		piece.set_meta("home_position", Vector2(game.size.x * piece_positions[index].x, game.size.y * piece_positions[index].y))
 		piece.position = piece.get_meta("home_position") as Vector2
 		piece.size = Vector2(game.size.x * 0.20, game.size.y * 0.24)
 		game.add_child(piece)
 		piece.gui_input.connect(_on_paper_piece_input.bind(game, piece, feedback, correct_ids.size(), game_data))
+	mount_mission_ui(game)
 	await game.tree_exited
 
 func _on_paper_piece_input(event: InputEvent, game: Control, piece: TextureRect, feedback: Label, required_count: int, game_data: Dictionary) -> void:
@@ -1791,6 +1861,9 @@ func _on_paper_piece_input(event: InputEvent, game: Control, piece: TextureRect,
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			game.set_meta("dragging_piece", piece)
+			var local_position := piece.position
+			piece.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			piece.position = local_position
 			piece.z_index = 5
 		else:
 			finish_paper_piece_drop(game, piece, feedback, required_count, game_data)
@@ -1802,15 +1875,15 @@ func _on_paper_piece_input(event: InputEvent, game: Control, piece: TextureRect,
 		else:
 			finish_paper_piece_drop(game, piece, feedback, required_count, game_data)
 		accept_event()
-	elif event is InputEventMouseMotion and game.get_meta("dragging_piece", null) == piece:
+	elif event is InputEventMouseMotion and (game.get_meta("dragging_piece") if game.has_meta("dragging_piece") else null) == piece:
 		piece.position += event.relative
 		accept_event()
-	elif event is InputEventScreenDrag and game.get_meta("dragging_piece", null) == piece:
+	elif event is InputEventScreenDrag and (game.get_meta("dragging_piece") if game.has_meta("dragging_piece") else null) == piece:
 		piece.position += event.relative
 		accept_event()
 
 func _on_paper_game_input(event: InputEvent, game: Control, feedback: Label, required_count: int, game_data: Dictionary) -> void:
-	var piece := game.get_meta("dragging_piece", null) as TextureRect
+	var piece := (game.get_meta("dragging_piece") if game.has_meta("dragging_piece") else null) as TextureRect
 	if piece == null or bool(game.get_meta("completed", false)):
 		return
 	if event is InputEventMouseMotion or event is InputEventScreenDrag:
@@ -1840,8 +1913,7 @@ func finish_paper_piece_drop(game: Control, piece: TextureRect, feedback: Label,
 			return
 		slot.set_meta("filled", true)
 		piece.set_meta("placed", true)
-		piece.position = slot.position
-		piece.size = slot.size
+		ArtUiFrame.anchor(piece, slot.get_rect(), game.size)
 		piece.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		piece.z_index = 1
 		feedback.add_theme_color_override("font_color", Color("c9f0d8"))
@@ -1857,7 +1929,12 @@ func finish_paper_piece_drop(game: Control, piece: TextureRect, feedback: Label,
 
 func reset_paper_piece(piece: TextureRect) -> void:
 	piece.z_index = 0
-	piece.create_tween().tween_property(piece, "position", piece.get_meta("home_position") as Vector2, 0.18)
+	var game := piece.get_parent() as Control
+	var tween := piece.create_tween()
+	tween.tween_property(piece, "position", (piece.get_meta("home_normalized") as Vector2) * game.size, 0.18)
+	await tween.finished
+	if is_instance_valid(piece) and not bool(piece.get_meta("placed", false)) and (game.get_meta("dragging_piece") if game.has_meta("dragging_piece") else null) != piece:
+		ArtUiFrame.anchor(piece, Rect2((piece.get_meta("home_normalized") as Vector2) * game.size, piece.size), game.size)
 
 func get_paper_piece_count(game: Control) -> int:
 	var count := 0
@@ -1917,7 +1994,7 @@ func show_clue_connection_game(game_data: Dictionary) -> void:
 	var note_rotations := [-2.0, 1.5, -1.0, 2.0, 1.0, -1.5, 2.0, -2.0]
 	for index in shuffled_clues.size():
 		var clue: Dictionary = shuffled_clues[index] as Dictionary
-		var clue_button := Button.new()
+		var clue_button := MissionButton.new()
 		clue_button.name = "Clue%d" % index
 		clue_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		clue_button.text_direction = Control.TEXT_DIRECTION_RTL
@@ -1953,7 +2030,7 @@ func show_clue_connection_game(game_data: Dictionary) -> void:
 	var slots: Array = game_data.get("slots", [])
 	for index in slots.size():
 		var slot_data: Dictionary = slots[index] as Dictionary
-		var slot_button := Button.new()
+		var slot_button := MissionButton.new()
 		slot_button.name = "InvitationSlot%d" % index
 		slot_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		slot_button.text_direction = Control.TEXT_DIRECTION_RTL
@@ -1971,12 +2048,13 @@ func show_clue_connection_game(game_data: Dictionary) -> void:
 		slot_button.set_meta("slot_data", slot_data)
 		invitation.add_child(slot_button)
 		slot_button.pressed.connect(_on_clue_connection_slot_pressed.bind(game, board, slot_button, feedback, instruction, game_data))
+	mount_mission_ui(game, game.size)
 	await game.tree_exited
 
 func _on_clue_connection_clue_pressed(game: Control, board: Panel, clue_button: Button, instruction: Label) -> void:
 	if bool(game.get_meta("completed", false)) or clue_button.disabled:
 		return
-	var previous := game.get_meta("selected_clue", null) as Button
+	var previous := (game.get_meta("selected_clue") if game.has_meta("selected_clue") else null) as Button
 	if is_instance_valid(previous):
 		previous.modulate = Color.WHITE
 	game.set_meta("selected_clue", clue_button)
@@ -1986,7 +2064,7 @@ func _on_clue_connection_clue_pressed(game: Control, board: Panel, clue_button: 
 func _on_clue_connection_slot_pressed(game: Control, board: Panel, slot_button: Button, feedback: Label, instruction: Label, game_data: Dictionary) -> void:
 	if bool(game.get_meta("completed", false)) or slot_button.disabled:
 		return
-	var clue_button := game.get_meta("selected_clue", null) as Button
+	var clue_button := (game.get_meta("selected_clue") if game.has_meta("selected_clue") else null) as Button
 	if not is_instance_valid(clue_button):
 		feedback.add_theme_color_override("font_color", Color("ffd1c4"))
 		feedback.text = "اول یه یادداشت رو انتخاب کن."

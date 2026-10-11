@@ -30,7 +30,9 @@ func _ready() -> void:
 
 func play() -> void:
 	await get_tree().process_frame
-	var start_position := (size - drag_icon.size) * 0.5
+	var root := get_parent() as MobileUiRoot
+	var bounds := root.get_content_rect() if root != null else Rect2(Vector2.ZERO, size)
+	var start_position := bounds.get_center() - drag_icon.size * 0.5
 	drag_icon.position = start_position
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 1.0, 0.15)

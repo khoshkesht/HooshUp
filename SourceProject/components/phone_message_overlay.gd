@@ -16,6 +16,7 @@ const GAMER_PHONE_TEXTURE := preload("res://assets/pics/ui/phone-message-new-gam
 @onready var message_text: Label = $Phone/Screen/MessageBubble/MessageText
 @onready var close_button: Button = $Phone/Screen/CloseButton
 
+var message_scroll: ScrollContainer
 var is_sending_message := false
 var sending_request_id := 0
 
@@ -28,9 +29,11 @@ func _ready() -> void:
 	status.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	status.text_direction = Control.TEXT_DIRECTION_LTR
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	close_button.set_script(preload("res://components/mission_button.gd"))
 	close_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	close_button.text_direction = Control.TEXT_DIRECTION_RTL
 	close_button.pressed.connect(close_message)
+	message_scroll = MissionUiSurface.scroll_text(message_text)
 	resized.connect(refresh_layout)
 	hide()
 
@@ -68,17 +71,20 @@ func show_sending_message(message: String, message_visible_seconds := 1.0, recei
 		sending_finished.emit()
 
 func close_message() -> void:
+	sending_request_id += 1
 	hide()
 	closed.emit()
 
 func refresh_layout() -> void:
-	var viewport_size := size
+	var root := get_parent() as MobileUiRoot
+	var bounds := root.get_content_rect() if root != null else Rect2(Vector2.ZERO, size)
+	var viewport_size := bounds.size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
-	var phone_height := viewport_size.y * 0.85
-	var phone_width := minf(phone_height * 0.55, viewport_size.x * 0.45)
+	var phone_height := minf(viewport_size.y * 0.85, viewport_size.x * 0.45 / 0.55)
+	var phone_width := phone_height * 0.55
 	phone.size = Vector2(phone_width, phone_height)
-	phone.position = Vector2(viewport_size.x * 0.75 - phone_width * 0.5, (viewport_size.y - phone_height) * 0.5)
+	phone.position = bounds.position + Vector2(clampf(viewport_size.x * 0.75 - phone_width * 0.5, 0, viewport_size.x - phone_width), (viewport_size.y - phone_height) * 0.5)
 	screen.position = Vector2.ZERO
 	screen.size = phone.size
 	var scale_factor := phone_height / 612.0
@@ -90,8 +96,8 @@ func refresh_layout() -> void:
 	conversation_title.add_theme_font_size_override("font_size", roundi(20.0 * scale_factor))
 	message_bubble.position = Vector2(screen.size.x * (0.10 if is_sending_message else 0.29), screen.size.y * 0.24)
 	message_bubble.size = Vector2(screen.size.x * (0.80 if is_sending_message else 0.62), screen.size.y * 0.35)
-	message_text.position = Vector2(14.0 * scale_factor, 12.0 * scale_factor)
-	message_text.size = message_bubble.size - Vector2(28.0, 24.0) * scale_factor
+	message_scroll.position = Vector2(14.0 * scale_factor, 12.0 * scale_factor)
+	message_scroll.size = message_bubble.size - Vector2(28.0, 24.0) * scale_factor
 	message_text.add_theme_font_size_override("font_size", roundi(19.0 * scale_factor))
 	close_button.size = Vector2(screen.size.x * 0.36, 40.0 * scale_factor)
 	close_button.position = Vector2((screen.size.x - close_button.size.x) * 0.5, screen.size.y * 0.68)

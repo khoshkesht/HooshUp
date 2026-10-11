@@ -61,7 +61,7 @@ func build_interface() -> void:
 	board.add_child(mars_preview)
 
 	var title := make_label("مسیر ارائه را کامل کن", 38, HORIZONTAL_ALIGNMENT_CENTER)
-	title.position = Vector2(120, 24)
+	title.position = Vector2(28, 24)
 	title.size = Vector2(1040, 46)
 	board.add_child(title)
 	var guide := make_label("هر گره را بچرخان تا نور از پرسش دقیق، پاسخ هوش آپ و بازبینی تو عبور کند.", 24, HORIZONTAL_ALIGNMENT_CENTER)
@@ -87,7 +87,7 @@ func build_interface() -> void:
 		board.add_child(line)
 		route_lines.append(line)
 	for index in ROTOR_NAMES.size():
-		var rotor := Button.new()
+		var rotor := MissionButton.new()
 		rotor.name = "Rotor%d" % index
 		rotor.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		rotor.tooltip_text = "چرخاندن گره"
@@ -128,7 +128,7 @@ func build_interface() -> void:
 		name_label.size = Vector2(168, 48)
 		board.add_child(name_label)
 
-	launch_button = Button.new()
+	launch_button = MissionButton.new()
 	launch_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	launch_button.text_direction = Control.TEXT_DIRECTION_RTL
 	launch_button.text = "پیش‌نمایش ارائه"
@@ -158,7 +158,7 @@ func _on_rotor_pressed(index: int, rotor: Button) -> void:
 	update_route_lines()
 
 func center_board() -> void:
-	if is_instance_valid(board):
+	if is_instance_valid(board) and not has_meta("mission_surface"):
 		board.position = (size - board.size) * 0.5
 
 func _on_launch_pressed() -> void:
