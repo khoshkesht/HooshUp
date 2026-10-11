@@ -31,7 +31,7 @@ const MIN_PLAYER_TYPING_CHARACTER_DELAY := 0.035
 @onready var background_music: AudioStreamPlayer = $BackgroundMusic
 @onready var laptop_sound: AudioStreamPlayer = $LaptopSound
 @onready var player_typing_sound: ChatTypingSound = $PlayerTypingSound
-@onready var stage_progress_panel: StageProgressPanel = $StageProgressPanel
+@onready var stage_progress_panel: StageProgressPanel = GlobalMenu.stage_progress_panel
 
 var level_data: Dictionary
 var found_clues: Dictionary = {}
@@ -101,11 +101,8 @@ func show_screen_view(view_id: String, texture: Texture2D, fallback_zoom := 1.0)
 	stretch_to_fit_viewport.show_scene(texture, get_view_zoom(view_id, fallback_zoom))
 
 func layout_design_viewports() -> void:
-	var safe_rect := ResponsiveLayout.safe_rect(size)
 	for viewport in [pan_zoom_viewport, stretch_to_fit_viewport]:
-		viewport.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		viewport.position = safe_rect.position
-		viewport.size = safe_rect.size
+		viewport.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -130,8 +127,6 @@ func _ready() -> void:
 	dialogue_panel.dismiss_requested.connect(_on_dialogue_dismiss_requested)
 	phone_message_overlay.closed.connect(_on_phone_message_closed)
 	phone_message_overlay.sending_finished.connect(_on_phone_sending_finished)
-	stage_progress_panel.closed.connect(_on_stage_progress_closed)
-	stage_progress_panel.badges_requested.connect(_on_stage_badges_requested)
 	GameSettings.background_music_changed.connect(_on_background_music_changed)
 	_sync_background_music()
 	pan_zoom_viewport.world_tapped.connect(_on_world_tapped)
@@ -896,8 +891,7 @@ func show_stage_progress() -> void:
 	GlobalMenu.set_hint_available(false)
 	GlobalMenu.set_toolbar_visible(false)
 	var stage_number := int(level_data.get("stage", 1))
-	stage_progress_panel.show_stage(stage_number, ProgressStore.get_completed_missions(stage_number))
-	stage_progress_panel.show()
+	GlobalMenu.open_stage_progress(stage_number, _on_stage_progress_closed)
 
 func _on_stage_progress_closed(next_stage: int, next_mission: int) -> void:
 	stage_progress_panel.hide()

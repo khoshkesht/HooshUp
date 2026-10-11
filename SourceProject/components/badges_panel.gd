@@ -30,11 +30,16 @@ const BADGES := [
 var background: TextureRect
 var content: Control
 var badge_grid: Control
+var art_frame: ArtUiFrame
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	build_page()
+	ArtUiFrame.anchor_children(content, DESIGN_SIZE)
+	art_frame = ArtUiFrame.wrap(self, background, DESIGN_SIZE, Vector2(1800, 1012.5))
+	content.reparent(background, false)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	resized.connect(refresh_layout)
 	refresh_layout()
 	hide()
@@ -123,14 +128,8 @@ func refresh_badges() -> void:
 			caption.add_theme_color_override("font_color", Color("eff6ff") if unlocked else Color("9aa6ad"))
 
 func refresh_layout() -> void:
-	if not is_instance_valid(background):
-		return
-	var scale_factor := ResponsiveLayout.contain_scale(size) * PANEL_BASE_SCALE
-	var origin := ResponsiveLayout.safe_origin(size)
-	background.position = origin
-	background.scale = Vector2.ONE * scale_factor
-	content.position = origin
-	content.scale = Vector2.ONE * scale_factor
+	if art_frame != null:
+		art_frame.refresh_layout()
 
 func add_label(node_name: String, text_value: String, position_value: Vector2, size_value: Vector2, font_size: int, font_color: Color) -> Label:
 	var label := Label.new()

@@ -21,15 +21,33 @@ var hud_root: MobileUiRoot
 var overlay_root: MobileUiRoot
 var diagnostics_root: MobileUiRoot
 var development_mission_selector: DevelopmentMissionSelector
+var map_menu_button: TextureButton
+var map_menu_host: Control
+var stage_continue_handler := Callable()
 
 func _ready() -> void:
 	get_tree().root.gui_embed_subwindows = true
 	hud_root = create_ui_layer("HUDLayer", "RootHUD", MobileUiRoot.HUD_LAYER)
 	overlay_root = create_ui_layer("OverlayLayer", "OverlayRoot", MobileUiRoot.OVERLAY_LAYER)
+	overlay_root.avoid_virtual_keyboard = true
 	menu_overlay = MENU_OVERLAY_SCENE.instantiate()
 	overlay_root.add_child(menu_overlay)
-	# جای‌گذاری قدیمی تولبار در مرحلهٔ مهاجرت HUD بازسازی می‌شود.
-	menu_overlay.toolbar.reparent(hud_root, false)
+	menu_overlay.toolbar.reparent(hud_root.safe_margin, false)
+	map_menu_host = Control.new()
+	map_menu_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.safe_margin.add_child(map_menu_host)
+	map_menu_button = TextureButton.new()
+	map_menu_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	map_menu_button.texture_normal = preload("res://assets/pics/ui/menu.png")
+	map_menu_button.ignore_texture_size = true
+	map_menu_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	map_menu_button.tooltip_text = "منو"
+	map_menu_button.name = "MapMenuButton"
+	map_menu_host.add_child(map_menu_button)
+	map_menu_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	map_menu_button.offset_left = -96
+	map_menu_button.offset_bottom = 96
+	map_menu_button.pressed.connect(toggle_menu)
 	menu_overlay.menu_action_requested.connect(_on_menu_action_requested)
 	menu_overlay.hint_confirmed.connect(_on_hint_confirmed)
 	settings_panel = SETTINGS_PANEL_SCENE.instantiate()
@@ -95,18 +113,28 @@ func _on_badges_panel_closed() -> void:
 func _on_hint_confirmed() -> void:
 	hint_requested.emit()
 
-func open_stage_progress() -> void:
+func open_stage_progress(stage_value := 0, on_continue := Callable()) -> void:
 	set_hint_available(false)
 	var active_mission := ProgressStore.get_active_mission()
-	var stage_number := active_mission.x
-	stage_progress_panel.show()
+	var stage_number: int = active_mission.x if stage_value == 0 else stage_value
+	stage_continue_handler = on_continue
 	stage_progress_panel.show_stage(stage_number, ProgressStore.get_completed_missions(stage_number))
+
+func _on_stage_progress_dismissed() -> void:
+	stage_continue_handler = Callable()
+	toolbar_requested_visible = true
+	refresh_hint_availability()
 
 func _on_stage_progress_closed(next_stage: int, next_mission: int) -> void:
 	stage_progress_panel.hide()
+	if stage_continue_handler.is_valid():
+		var handler := stage_continue_handler
+		stage_continue_handler = Callable()
+		handler.call(next_stage, next_mission)
+		return
 	refresh_hint_availability()
 	ProgressStore.set_active_mission(next_stage, next_mission)
-	if next_stage == 1:
+	if FileAccess.file_exists("res://data/levels/level%d_mission%d.json" % [next_stage, next_mission]):
 		get_tree().change_scene_to_file(LEVEL_1_SCENE)
 	else:
 		get_tree().change_scene_to_file(MAP_SCENE)
@@ -116,6 +144,7 @@ func _on_stage_badges_requested() -> void:
 	open_badges(true)
 
 func _on_scene_changed() -> void:
+	stage_continue_handler = Callable()
 	toolbar_requested_visible = true
 	refresh_hint_availability()
 
@@ -157,3 +186,4 @@ func refresh_gameplay_ui_visibility() -> void:
 		selector_is_open = development_mission_selector.is_panel_open()
 	var modal_is_open: bool = legacy_modal_is_open or selector_is_open
 	menu_overlay.set_gameplay_available(is_level_scene and toolbar_requested_visible and not modal_is_open)
+	map_menu_button.visible = current_scene != null and current_scene.scene_file_path == MAP_SCENE and not modal_is_open

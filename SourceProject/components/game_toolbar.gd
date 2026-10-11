@@ -36,6 +36,11 @@ func _ready() -> void:
 	build_values()
 	build_mission_slots()
 	build_action_buttons()
+	call_deferred("mount_art_frame")
+
+func mount_art_frame() -> void:
+	ArtUiFrame.anchor_children(self, TOOLBAR_SIZE, 0.66)
+	ArtUiFrame.wrap(get_parent(), self, TOOLBAR_SIZE, TOOLBAR_SIZE * 0.66, Vector2.ZERO)
 
 func build_background() -> void:
 	var background := TextureRect.new()
@@ -150,6 +155,7 @@ func set_mission_complete(mission_index: int, is_complete: bool) -> void:
 		var star_size := source_size(Vector2(174, 174))
 		star.position = (slot.size - star_size) * 0.5
 		star.size = star_size
+		ArtUiFrame.anchor(star, Rect2(Vector2.ONE * 7, Vector2.ONE * 174), Vector2.ONE * 188)
 		return
 	var lock_icon := TextureRect.new()
 	lock_icon.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -161,6 +167,7 @@ func set_mission_complete(mission_index: int, is_complete: bool) -> void:
 	var lock_size := source_size(Vector2(73, 94))
 	lock_icon.position = (slot.size - lock_size) * 0.5 + source_position(LOCK_VISUAL_CENTER_OFFSET)
 	lock_icon.size = lock_size
+	ArtUiFrame.anchor(lock_icon, Rect2(Vector2(58.5, 48), Vector2(73, 94)), Vector2.ONE * 188)
 
 func make_avatar_head_texture(texture: Texture2D) -> Texture2D:
 	if texture == null:

@@ -11,9 +11,11 @@ var number_label: Label
 var timer: Timer
 var remaining_seconds := 0
 var is_running := false
+var hud_host: Control
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	theme = MobileUiRoot.UI_THEME
 	size = display_size
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var background := TextureRect.new()
@@ -54,7 +56,25 @@ func stop() -> void:
 		timer.stop()
 
 func place_bottom_right(parent_size: Vector2, margin := Vector2(24, 24)) -> void:
-	position = parent_size - size - margin
+	# پارامترهای قبلی برای سازگاری فراخواننده‌ها حفظ می‌شوند؛ جای‌گذاری فقط با Anchor.
+	if hud_host == null:
+		var source_overlay := get_parent()
+		var host := Control.new()
+		host.name = "CountdownHUDHost"
+		host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		GlobalMenu.hud_root.safe_margin.add_child(host)
+		reparent(host, false)
+		hud_host = host
+		source_overlay.tree_exiting.connect(host.queue_free)
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	offset_left = -display_size.x
+	offset_top = -display_size.y
+	offset_right = 0
+	offset_bottom = 0
+
+func _exit_tree() -> void:
+	if is_instance_valid(hud_host) and not hud_host.is_queued_for_deletion():
+		hud_host.queue_free()
 
 func _on_timer_timeout() -> void:
 	remaining_seconds -= 1

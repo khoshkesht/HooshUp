@@ -14,6 +14,8 @@ var safe_area: Control
 var safe_margin: MarginContainer
 var safe_rect := Rect2()
 var safe_area_source := "window"
+var avoid_virtual_keyboard := false
+var preview_keyboard_height := 0.0
 # پیش‌نمایش بریدگی فقط در اجرای Debug دسکتاپ؛ مختصات فیزیکی نمایشگر.
 var preview_display_safe_rect := Rect2()
 var _refresh_elapsed := 0.0
@@ -71,6 +73,16 @@ func refresh_safe_area() -> void:
 			safe_area_source = "fallback"
 	elif safe_area_source == "device":
 		safe_area_source = "fallback"
+	if avoid_virtual_keyboard:
+		var keyboard_height := 0.0
+		if OS.has_feature("android") or OS.has_feature("ios"):
+			keyboard_height = DisplayServer.virtual_keyboard_get_height()
+		elif OS.is_debug_build():
+			keyboard_height = preview_keyboard_height
+		if keyboard_height > 0:
+			var screen_rect := get_screen_transform() * Rect2(Vector2.ZERO, size)
+			screen_rect.size.y = maxf(0, screen_rect.size.y - keyboard_height)
+			next_rect = next_rect.intersection(display_rect_to_local(self, screen_rect))
 	if next_rect == safe_rect:
 		return
 	safe_rect = next_rect

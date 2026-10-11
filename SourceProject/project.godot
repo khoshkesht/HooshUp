@@ -27,16 +27,12 @@ GameContent="*res://scripts/game_content.gd"
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
-window/size/resizable=false
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/size/window_width_override=960
 window/size/window_height_override=540
 window/stretch/mode="canvas_items"
-# Keep the authored 1280×720 canvas fully visible.  "expand" enlarges the
-# logical canvas on 16:10 and ultra-wide Android displays, which lets
-# fixed-coordinate controls extend beyond the intended composition.
-window/stretch/aspect="keep"
+window/stretch/aspect="expand"
 
 [rendering]
 

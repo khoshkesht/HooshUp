@@ -34,6 +34,7 @@ var hint_confirmation_panel: PanelContainer
 var hint_confirmation_text: Label
 var hint_cancel_button: Button
 var hint_confirm_button: Button
+var menu_frame: ArtUiFrame
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -61,30 +62,25 @@ func _ready() -> void:
 	hint_confirmation = build_hint_confirmation()
 	add_child(hint_confirmation)
 	resized.connect(refresh_layout)
+	ArtUiFrame.anchor_children($MenuPanel/MenuContent, Vector2(1280, 720), 1.5)
+	menu_frame = ArtUiFrame.wrap(self, menu_panel, Vector2(1280, 720), Vector2(1800, 1012.5))
+	call_deferred("mount_confirmation_frames")
 	call_deferred("prepare_menu")
 	refresh_progress_values()
 
 func prepare_menu() -> void:
 	refresh_layout()
-	menu_panel.position = get_hidden_menu_position()
 	menu_panel.hide()
 
+func mount_confirmation_frames() -> void:
+	ArtUiFrame.anchor_children(hint_confirmation_panel.get_child(0), HINT_PANEL_SIZE, 1.5)
+	ArtUiFrame.wrap(hint_confirmation, hint_confirmation_panel, HINT_PANEL_SIZE, HINT_PANEL_SIZE * 1.5)
+	var exit_panel := $ExitConfirmation/Panel as PanelContainer
+	ArtUiFrame.wrap(exit_confirmation, exit_panel, Vector2(500, 200), Vector2(750, 300))
+
 func refresh_layout() -> void:
-	safe_scale = ResponsiveLayout.contain_scale(size)
-	safe_origin = ResponsiveLayout.safe_origin(size)
-	menu_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	menu_panel.size = ResponsiveLayout.DESIGN_SIZE
-	menu_panel.scale = Vector2.ONE * safe_scale
-	if not is_open:
-		menu_panel.position = get_hidden_menu_position()
-	toolbar.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	toolbar.scale = Vector2.ONE * safe_scale * TOOLBAR_DISPLAY_SCALE
-	toolbar.position = safe_origin + Vector2(18, 14) * safe_scale
-	if is_instance_valid(hint_confirmation_panel):
-		hint_confirmation_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		hint_confirmation_panel.position = safe_origin + HINT_PANEL_POSITION * safe_scale
-		hint_confirmation_panel.size = HINT_PANEL_SIZE
-		hint_confirmation_panel.scale = Vector2.ONE * safe_scale
+	if menu_frame != null:
+		menu_frame.refresh_layout()
 	refresh_hint_visibility()
 
 func _on_hint_pressed() -> void:
@@ -164,12 +160,14 @@ func configure_hint_confirmation(can_afford: bool) -> void:
 		hint_cancel_button.position = Vector2(38, 208)
 		hint_cancel_button.size = Vector2(210, 56)
 		hint_confirm_button.show()
+		ArtUiFrame.anchor(hint_cancel_button, Rect2(Vector2(38, 208), Vector2(210, 56)), HINT_PANEL_SIZE)
 		return
 	hint_confirmation_text.text = "امتیاز کافی نداری؛ فعلاً نمی‌تونی این راهنما را ببینی."
 	hint_cancel_button.text = "متوجه شدم"
 	hint_cancel_button.position = Vector2(195, 208)
 	hint_cancel_button.size = Vector2(250, 56)
 	hint_confirm_button.hide()
+	ArtUiFrame.anchor(hint_cancel_button, Rect2(Vector2(195, 208), Vector2(250, 56)), HINT_PANEL_SIZE)
 
 func make_hint_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -225,7 +223,7 @@ func refresh_hint_visibility() -> void:
 	toolbar.set_hint_enabled(hint_available)
 
 func get_hidden_menu_position() -> Vector2:
-	return safe_origin + Vector2(0, -ResponsiveLayout.DESIGN_SIZE.y * safe_scale)
+	return Vector2(0, -menu_panel.size.y)
 
 func toggle_menu() -> void:
 	if is_open:
@@ -238,7 +236,8 @@ func open_menu() -> void:
 	refresh_progress_values()
 	refresh_hint_visibility()
 	menu_panel.show()
-	animate_panel(safe_origin, false)
+	menu_frame.animation_offset = get_hidden_menu_position()
+	animate_panel(Vector2.ZERO, false)
 
 func close_menu() -> void:
 	is_open = false
@@ -251,7 +250,7 @@ func animate_panel(target_position: Vector2, hide_after_animation: bool) -> void
 	menu_tween = create_tween()
 	menu_tween.set_trans(Tween.TRANS_QUAD)
 	menu_tween.set_ease(Tween.EASE_OUT)
-	menu_tween.tween_property(menu_panel, "position", target_position, 0.28)
+	menu_tween.tween_property(menu_frame, "animation_offset", target_position, 0.28)
 	if hide_after_animation:
 		menu_tween.tween_callback(finish_close)
 

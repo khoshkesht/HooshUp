@@ -18,12 +18,15 @@ var music_enabled := true
 var initial_profile_required := false
 var avatar_selected_for_initial_profile := true
 var close_button: TextureButton
+var art_frame: ArtUiFrame
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	build()
+	ArtUiFrame.anchor_children(panel, Vector2(1200, 675), 1.5)
+	art_frame = ArtUiFrame.wrap(self, panel, Vector2(1200, 675), Vector2(1800, 1012.5))
 	resized.connect(refresh_layout)
 	hide()
 
@@ -120,11 +123,8 @@ func build() -> void:
 	close_button.pressed.connect(hide)
 
 func refresh_layout() -> void:
-	if not is_instance_valid(panel):
-		return
-	var scale := ResponsiveLayout.contain_scale(size)
-	panel.scale = Vector2.ONE * scale
-	panel.position = ResponsiveLayout.design_to_safe(size, Vector2(40, 22))
+	if art_frame != null:
+		art_frame.refresh_layout()
 
 func add_label(node_name: String, text_value: String, position_value: Vector2, size_value: Vector2, font_size: int, alignment := HORIZONTAL_ALIGNMENT_RIGHT) -> void:
 	var label := Label.new()

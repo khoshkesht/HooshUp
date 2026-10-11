@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" path="res://components/dialogue_panel.tscn" id="4_dialogue_panel"]
 [ext_resource type="PackedScene" path="res://components/phone_message_overlay.tscn" id="7_phone_message"]
 [ext_resource type="Script" path="res://components/stretch_to_fit_viewport.gd" id="6_stretch_to_fit"]
-[ext_resource type="PackedScene" path="res://components/stage_progress_panel.tscn" id="8_stage_progress"]
 [ext_resource type="AudioStream" path="res://assets/sounds/computer-keyboard-typing.mp3" id="9_typing_sound"]
 [ext_resource type="Script" path="res://components/chat_typing_sound.gd" id="10_typing_sound_script"]
 
@@ -135,10 +134,5 @@ mouse_filter = 2
 [node name="PlayerTypingSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("9_typing_sound")
 script = ExtResource("10_typing_sound_script")
-
-[node name="StageProgressPanel" parent="." instance=ExtResource("8_stage_progress")]
-visible = false
-z_index = 20
-z_as_relative = false
 
 [connection signal="finished" from="LaptopSound" to="." method="_on_laptop_sound_finished"]

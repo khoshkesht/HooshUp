@@ -167,7 +167,8 @@ func make_picker(node_name: String) -> OptionButton:
 	picker.clip_text = false
 	picker.custom_minimum_size = Vector2(72, 72)
 	var popup := picker.get_popup()
-	popup.set_layout_direction(Window.LAYOUT_DIRECTION_LTR)
+	# جهت ردیف‌های پنجرهٔ داخلی برای راست‌چین متن؛ بوم و Anchorها همچنان LTR.
+	popup.set_layout_direction(Window.LAYOUT_DIRECTION_RTL)
 	popup.theme = MobileUiRoot.UI_THEME
 	popup.prefer_native_menu = false
 	popup.about_to_popup.connect(_prepare_popup.bind(picker))

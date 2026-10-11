@@ -20,13 +20,17 @@ var completed_missions: Array[int] = []
 var panel: TextureRect
 var content: Control
 var close_tween: Tween
-var panel_scale := PANEL_BASE_SCALE
+var panel_scale := 1.0
+var art_frame: ArtUiFrame
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	build_panel()
+	art_frame = ArtUiFrame.wrap(self, panel, DESIGN_SIZE, Vector2(1800, 1012.5))
+	content.reparent(panel, false)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	resized.connect(refresh_layout)
 
 func show_stage(stage_value: int, completed: Array[int]) -> void:
@@ -34,11 +38,7 @@ func show_stage(stage_value: int, completed: Array[int]) -> void:
 	completed_missions = completed
 	if is_node_ready():
 		refresh()
-		set_panel_hidden_position()
-		var tween := create_tween()
-		tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).set_parallel(true)
-		tween.tween_property(panel, "position", get_visible_panel_position(), 0.35)
-		tween.tween_property(content, "position", get_visible_panel_position(), 0.35)
+	show()
 
 func build_panel() -> void:
 	var shade := ColorRect.new()
@@ -67,33 +67,16 @@ func build_panel() -> void:
 	refresh()
 
 func refresh_layout() -> void:
-	if not is_instance_valid(panel):
-		return
-	panel_scale = ResponsiveLayout.contain_scale(size) * PANEL_BASE_SCALE
-	panel.scale = Vector2.ONE
-	panel.size = DESIGN_SIZE * panel_scale
-	content.size = panel.size
-	if visible:
-		set_panel_position(get_visible_panel_position())
-	else:
-		set_panel_hidden_position()
-
-func get_visible_panel_position() -> Vector2:
-	return ResponsiveLayout.safe_origin(size) + Vector2(40, 22) * ResponsiveLayout.contain_scale(size)
-
-func set_panel_hidden_position() -> void:
-	set_panel_position(Vector2(get_visible_panel_position().x, -panel.size.y))
-
-func set_panel_position(new_position: Vector2) -> void:
-	panel.position = new_position
-	content.position = new_position
+	if art_frame != null:
+		art_frame.refresh_layout()
 
 func refresh() -> void:
 	for child in content.get_children():
+		content.remove_child(child)
 		child.queue_free()
 	var stage: Dictionary = GameContent.get_stage(stage_number)
-	add_text("StageTitle", "مرحله %s از %s" % [to_persian_digits(stage_number), to_persian_digits(GameContent.STAGES.size())], Vector2(470, -260), Vector2(730, 88), 52, HORIZONTAL_ALIGNMENT_CENTER)
-	add_text("StageName", str(stage.get("progress_title", stage.get("title", ""))), Vector2(480, -235), Vector2(680, 56), 30, HORIZONTAL_ALIGNMENT_CENTER)
+	add_text("StageTitle", "مرحله %s از %s" % [to_persian_digits(stage_number), to_persian_digits(GameContent.STAGES.size())], Vector2(470, 100), Vector2(730, 88), 52, HORIZONTAL_ALIGNMENT_CENTER)
+	add_text("StageName", str(stage.get("progress_title", stage.get("title", ""))), Vector2(480, 158), Vector2(680, 56), 30, HORIZONTAL_ALIGNMENT_CENTER)
 	var centers := [Vector2(214, 349), Vector2(535, 349), Vector2(842, 349), Vector2(1150, 349), Vector2(1450, 349)]
 	var missions: Array = stage.get("missions", [])
 	for mission_index in centers.size():
@@ -124,6 +107,7 @@ func refresh() -> void:
 	content.add_child(action)
 	action.position = scale_position(Vector2(605, 735))
 	action.size = scale_position(Vector2(465, 75))
+	ArtUiFrame.anchor(action, Rect2(Vector2(605, 735), Vector2(465, 75)), DESIGN_SIZE)
 
 func add_text(node_name: String, text_value: String, design_position: Vector2, design_size: Vector2, font_size: int, alignment := HORIZONTAL_ALIGNMENT_RIGHT, single_line := false) -> void:
 	var label := Label.new()
@@ -140,6 +124,7 @@ func add_text(node_name: String, text_value: String, design_position: Vector2, d
 	content.add_child(label)
 	label.position = scale_position(design_position)
 	label.size = scale_position(design_size)
+	ArtUiFrame.anchor(label, Rect2(design_position, design_size), DESIGN_SIZE)
 
 func add_pass_mark(mission_number: int, design_center: Vector2) -> void:
 	var mark := TextureRect.new()
@@ -152,6 +137,7 @@ func add_pass_mark(mission_number: int, design_center: Vector2) -> void:
 	content.add_child(mark)
 	mark.size = scale_position(Vector2(360, 470))
 	mark.position = scale_position(design_center - Vector2(175, 95))
+	ArtUiFrame.anchor(mark, Rect2(design_center - Vector2(175, 95), Vector2(360, 470)), DESIGN_SIZE)
 
 func scale_position(design_value: Vector2) -> Vector2:
 	return design_value * panel_scale
@@ -164,14 +150,8 @@ func to_persian_digits(value: Variant) -> String:
 	return latin
 
 func close_and_continue(next_stage: int, next_mission: int) -> void:
-	if close_tween != null and close_tween.is_valid():
-		return
-	close_tween = create_tween()
-	close_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).set_parallel(true)
-	var hidden_position := Vector2(get_visible_panel_position().x, -panel.size.y)
-	close_tween.tween_property(panel, "position", hidden_position, 0.28)
-	close_tween.tween_property(content, "position", hidden_position, 0.28)
-	close_tween.chain().tween_callback(func() -> void: closed.emit(next_stage, next_mission))
+	hide()
+	closed.emit(next_stage, next_mission)
 
 func show_badges() -> void:
 	badges_requested.emit()
