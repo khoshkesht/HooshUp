@@ -61,16 +61,16 @@ func build_avatar() -> void:
 	avatar.size = source_size(Vector2(370, 338))
 
 func build_values() -> void:
-	stage_value = make_value_label(41)
+	stage_value = make_value_label(46)
 	stage_value.name = "StageValue"
 	add_child(stage_value)
 	stage_value.position = source_position(Vector2(23, 365))
 	stage_value.size = source_size(Vector2(145, 135))
 
-	score_value = make_value_label(34)
+	score_value = make_value_label(48)
 	score_value.name = "ScoreValue"
 	add_child(score_value)
-	score_value.position = source_position(Vector2(172, 400))
+	score_value.position = source_position(Vector2(172, 385))
 	score_value.size = source_size(Vector2(405, 96))
 
 func make_value_label(font_size: int) -> Label:
@@ -128,6 +128,7 @@ func make_action_button(tooltip: String) -> Button:
 
 func set_status(stage_number: int, score: int, completed_missions: Array[int], avatar_texture: Texture2D) -> void:
 	avatar.texture = make_avatar_head_texture(avatar_texture)
+
 	stage_value.text = to_persian_digits(stage_number)
 	score_value.text = to_persian_digits(score)
 	for mission_index in mission_slots.size():
