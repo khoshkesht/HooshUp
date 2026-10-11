@@ -1,0 +1,74 @@
+[gd_resource type="Theme" load_steps=6 format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/Vazirmatn-Regular.ttf" id="1_font"]
+
+[sub_resource type="StyleBoxFlat" id="Panel"]
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
+bg_color = Color(0.09, 0.14, 0.23, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.85, 0.82, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_left = 14
+corner_radius_bottom_right = 14
+
+[sub_resource type="StyleBoxFlat" id="Button"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.17, 0.30, 0.40, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
+[sub_resource type="StyleBoxFlat" id="Hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.23, 0.45, 0.53, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
+[sub_resource type="StyleBoxFlat" id="Focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.85, 0.82, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+
+[resource]
+default_font = ExtResource("1_font")
+default_font_size = 24
+MobilePanel/base_type = &"PanelContainer"
+MobilePanel/styles/panel = SubResource("Panel")
+MobileButton/base_type = &"Button"
+MobileButton/colors/font_color = Color(0.95, 0.98, 1, 1)
+MobileButton/styles/normal = SubResource("Button")
+MobileButton/styles/hover = SubResource("Hover")
+MobileButton/styles/pressed = SubResource("Hover")
+MobileButton/styles/focus = SubResource("Focus")
+MobileOptionButton/base_type = &"OptionButton"
+MobileOptionButton/styles/normal = SubResource("Button")
+MobileOptionButton/styles/hover = SubResource("Hover")
+MobileOptionButton/styles/pressed = SubResource("Hover")
+MobileOptionButton/styles/focus = SubResource("Focus")
+VBoxContainer/constants/separation = 12
+HBoxContainer/constants/separation = 12
+PopupMenu/constants/v_separation = 16
+PopupMenu/styles/panel = SubResource("Panel")
