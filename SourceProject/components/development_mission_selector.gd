@@ -14,9 +14,13 @@ var launch_button: Button
 var availability_label: Label
 var panel: Panel
 var toggle: Button
+var diagnostic_label: Label
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	# Keep debug controls below the global menu and hint confirmation overlays.
+	z_index = -1
+	z_as_relative = false
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	build_controls()
@@ -50,9 +54,9 @@ func build_controls() -> void:
 	stage_picker.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	stage_picker.text_direction = Control.TEXT_DIRECTION_RTL
 	stage_picker.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel.add_child(stage_picker)
 	stage_picker.position = Vector2(178, 88)
 	stage_picker.size = Vector2(366, 42)
-	panel.add_child(stage_picker)
 	for stage_number in range(1, GameContent.STAGES.size() + 1):
 		stage_picker.add_item("مرحله %d: %s" % [stage_number, str(GameContent.get_stage(stage_number).get("title", ""))], stage_number)
 	stage_picker.item_selected.connect(_on_stage_selected)
@@ -65,9 +69,9 @@ func build_controls() -> void:
 	mission_picker.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	mission_picker.text_direction = Control.TEXT_DIRECTION_RTL
 	mission_picker.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel.add_child(mission_picker)
 	mission_picker.position = Vector2(178, 144)
 	mission_picker.size = Vector2(366, 42)
-	panel.add_child(mission_picker)
 	mission_picker.item_selected.connect(_on_mission_selected)
 
 	availability_label = Label.new()
@@ -77,9 +81,9 @@ func build_controls() -> void:
 	availability_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	availability_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	availability_label.add_theme_font_size_override("font_size", 17)
+	panel.add_child(availability_label)
 	availability_label.position = Vector2(36, 204)
 	availability_label.size = Vector2(508, 48)
-	panel.add_child(availability_label)
 
 	launch_button = Button.new()
 	launch_button.name = "LaunchSelectedMission"
@@ -87,10 +91,24 @@ func build_controls() -> void:
 	launch_button.text_direction = Control.TEXT_DIRECTION_RTL
 	launch_button.text = "اجرای مأموریت انتخاب‌شده"
 	launch_button.add_theme_font_size_override("font_size", 20)
+	panel.add_child(launch_button)
 	launch_button.position = Vector2(178, 268)
 	launch_button.size = Vector2(366, 44)
-	panel.add_child(launch_button)
 	launch_button.pressed.connect(launch_selected_mission)
+
+	diagnostic_label = Label.new()
+	diagnostic_label.name = "DevelopmentMissionDiagnostics"
+	diagnostic_label.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	diagnostic_label.text_direction = Control.TEXT_DIRECTION_RTL
+	diagnostic_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	diagnostic_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	diagnostic_label.add_theme_font_size_override("font_size", 15)
+	diagnostic_label.add_theme_color_override("font_color", Color.WHITE)
+	diagnostic_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	diagnostic_label.add_theme_constant_override("shadow_offset_x", 1)
+	diagnostic_label.add_theme_constant_override("shadow_offset_y", 1)
+	add_child(diagnostic_label)
+	diagnostic_label.size = Vector2(540, 54)
 	refresh_mission_picker()
 	mission_picker.select(1)
 	refresh_availability()
@@ -106,6 +124,23 @@ func layout_controls() -> void:
 	panel.position = safe_rect.position + Vector2(20, 300) * safe_scale
 	panel.size = PANEL_SIZE
 	panel.scale = Vector2.ONE * safe_scale
+	diagnostic_label.position = safe_rect.position + Vector2(safe_rect.size.x - 560 * safe_scale, 16 * safe_scale)
+	diagnostic_label.scale = Vector2.ONE * safe_scale
+	call_deferred("log_layout")
+
+func log_layout() -> void:
+	if not is_instance_valid(panel):
+		return
+	update_diagnostic_label()
+	print("DEV_SELECTOR_LAYOUT root=%s safe=%s toggle=%s panel=%s stage=%s mission=%s launch=%s" % [
+		size,
+		ResponsiveLayout.safe_rect(size),
+		toggle.get_global_rect(),
+		panel.get_global_rect(),
+		stage_picker.get_global_rect(),
+		mission_picker.get_global_rect(),
+		launch_button.get_global_rect()
+	])
 
 func add_label(text_value: String, position_value: Vector2, size_value: Vector2, font_size: int) -> void:
 	var label := Label.new()
@@ -120,6 +155,28 @@ func add_label(text_value: String, position_value: Vector2, size_value: Vector2,
 
 func toggle_panel() -> void:
 	panel.visible = not panel.visible
+	update_diagnostic_label()
+	print("DEV_SELECTOR_TOGGLE visible=%s panel=%s stage=%s mission=%s launch=%s" % [
+		panel.visible,
+		panel.get_global_rect(),
+		stage_picker.get_global_rect(),
+		mission_picker.get_global_rect(),
+		launch_button.get_global_rect()
+	])
+
+func update_diagnostic_label() -> void:
+	var stage_rect := stage_picker.get_global_rect()
+	var mission_rect := mission_picker.get_global_rect()
+	var launch_rect := launch_button.get_global_rect()
+	diagnostic_label.text = "پنل تست: %s | مرحله: %d، %d | مأموریت: %d، %d\nدکمهٔ اجرا: %d، %d" % [
+		"باز" if panel.visible else "بسته",
+		roundi(stage_rect.position.x),
+		roundi(stage_rect.position.y),
+		roundi(mission_rect.position.x),
+		roundi(mission_rect.position.y),
+		roundi(launch_rect.position.x),
+		roundi(launch_rect.position.y)
+	]
 
 func _on_stage_selected(_index: int) -> void:
 	refresh_mission_picker()
