@@ -109,6 +109,10 @@ func set_toolbar_visible(is_visible: bool) -> void:
 	toolbar_requested_visible = is_visible
 	refresh_gameplay_ui_visibility()
 
+func toggle_menu() -> void:
+	if is_instance_valid(menu_overlay):
+		menu_overlay.toggle_menu()
+
 func refresh_gameplay_ui_visibility() -> void:
 	if not is_instance_valid(menu_overlay):
 		return

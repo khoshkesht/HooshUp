@@ -5,6 +5,8 @@ const MAP_VIEW_CONFIG_PATH := "res://data/views/main_map.json"
 const DEFAULT_MAP_ZOOM := 1.3
 const TAP_DRAG_THRESHOLD := 12.0
 const LOCK_TEXTURE := preload("res://assets/pics/ui/lock.png")
+const MENU_TEXTURE := preload("res://assets/pics/ui/menu.png")
+const MAP_MENU_SIZE := Vector2(58, 58)
 
 const STAGE_LABELS := [
 	Rect2(69, 153, 192, 37), Rect2(420, 153, 186, 37), Rect2(724, 153, 186, 37), Rect2(1045, 176, 186, 37),
@@ -19,16 +21,28 @@ var press_position := Vector2.ZERO
 var did_pan := false
 var map_zoom := DEFAULT_MAP_ZOOM
 var pan_enabled := true
+var safe_viewport: Control
+var menu_button: TextureButton
 
 func _ready() -> void:
 	load_view_settings()
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	safe_viewport = Control.new()
+	safe_viewport.name = "SafeViewport"
+	safe_viewport.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	safe_viewport.clip_contents = true
+	safe_viewport.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(safe_viewport)
+	map_content.reparent(safe_viewport, false)
 	map_content.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	map_content.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	map_content.size = ResponsiveLayout.DESIGN_SIZE
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	for stage_index in STAGE_LABELS.size():
 		add_stage_button(stage_index + 1, STAGE_LABELS[stage_index])
+	create_menu_button()
+	layout_safe_viewport()
+	resized.connect(layout_safe_viewport)
 	call_deferred("reset_view")
 	call_deferred("show_drag_gesture_hint")
 
@@ -95,15 +109,42 @@ func open_stage(stage_number: int) -> void:
 	push_error("No scene has been created for stage %d yet." % stage_number)
 
 func reset_view() -> void:
-	var cover_scale := ResponsiveLayout.cover_scale(size)
-	map_content.scale = Vector2.ONE * cover_scale * map_zoom
+	var canvas_scale := ResponsiveLayout.contain_scale(safe_viewport.size)
+	map_content.scale = Vector2.ONE * canvas_scale * map_zoom
 	# Keep the campaign's first stages visible when entering the map.
-	map_content.position = ResponsiveLayout.centered_position(size, ResponsiveLayout.DESIGN_SIZE, cover_scale)
+	map_content.position = ResponsiveLayout.centered_position(safe_viewport.size, ResponsiveLayout.DESIGN_SIZE, canvas_scale)
 
 func clamp_map_position() -> void:
-	var minimum_position := size - map_content.size * map_content.scale.x
+	var minimum_position := safe_viewport.size - map_content.size * map_content.scale.x
 	map_content.position.x = clamp(map_content.position.x, minimum_position.x, 0.0)
 	map_content.position.y = clamp(map_content.position.y, minimum_position.y, 0.0)
+
+func layout_safe_viewport() -> void:
+	if not is_instance_valid(safe_viewport):
+		return
+	var safe_rect := ResponsiveLayout.safe_rect(size)
+	safe_viewport.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	safe_viewport.position = safe_rect.position
+	safe_viewport.size = safe_rect.size
+	if is_instance_valid(menu_button):
+		var safe_scale := safe_rect.size.x / ResponsiveLayout.DESIGN_SIZE.x
+		menu_button.position = safe_rect.position + Vector2(24, 20) * safe_scale
+		menu_button.size = MAP_MENU_SIZE * safe_scale
+	reset_view()
+
+func create_menu_button() -> void:
+	menu_button = TextureButton.new()
+	menu_button.name = "MapMenuButton"
+	menu_button.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	menu_button.texture_normal = MENU_TEXTURE
+	menu_button.ignore_texture_size = true
+	menu_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	menu_button.tooltip_text = "منو"
+	menu_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(menu_button)
+	menu_button.position = Vector2(24, 20)
+	menu_button.size = MAP_MENU_SIZE
+	menu_button.pressed.connect(GlobalMenu.toggle_menu)
 
 func _gui_input(event: InputEvent) -> void:
 	if not pan_enabled:

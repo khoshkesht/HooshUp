@@ -8,7 +8,7 @@ const TOOLBAR_TEXTURE := preload("res://assets/pics/ui/toolbar.png")
 const STAR_TEXTURE := preload("res://assets/pics/ui/star.png")
 const LOCK_TEXTURE := preload("res://assets/pics/ui/toolbar-lock.png")
 const TOOLBAR_SIZE := Vector2(1050, 273)
-const TOOLBAR_OPACITY := 0.9
+const TOOLBAR_OPACITY := 0.85
 const SOURCE_SCALE := TOOLBAR_SIZE.x / 2093.0
 const MISSION_CENTERS: Array[Vector2] = [
 	Vector2(610, 263),
@@ -61,13 +61,13 @@ func build_avatar() -> void:
 	avatar.size = source_size(Vector2(370, 338))
 
 func build_values() -> void:
-	stage_value = make_value_label(38)
+	stage_value = make_value_label(41)
 	stage_value.name = "StageValue"
 	add_child(stage_value)
 	stage_value.position = source_position(Vector2(23, 365))
 	stage_value.size = source_size(Vector2(145, 135))
 
-	score_value = make_value_label(27)
+	score_value = make_value_label(34)
 	score_value.name = "ScoreValue"
 	add_child(score_value)
 	score_value.position = source_position(Vector2(172, 400))

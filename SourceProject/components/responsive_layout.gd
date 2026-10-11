@@ -21,6 +21,10 @@ static func safe_origin(viewport_size: Vector2) -> Vector2:
 	var scale := contain_scale(viewport_size)
 	return centered_position(viewport_size, DESIGN_SIZE, scale)
 
+static func safe_rect(viewport_size: Vector2) -> Rect2:
+	var scale := contain_scale(viewport_size)
+	return Rect2(safe_origin(viewport_size), DESIGN_SIZE * scale)
+
 static func design_to_safe(viewport_size: Vector2, design_position: Vector2) -> Vector2:
 	var scale := contain_scale(viewport_size)
 	return safe_origin(viewport_size) + design_position * scale

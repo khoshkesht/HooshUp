@@ -13,23 +13,24 @@ var mission_picker: OptionButton
 var launch_button: Button
 var availability_label: Label
 var panel: Panel
+var toggle: Button
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	build_controls()
+	resized.connect(layout_controls)
+	call_deferred("layout_controls")
 
 func build_controls() -> void:
-	var toggle := Button.new()
+	toggle = Button.new()
 	toggle.name = "DevelopmentMissionToggle"
 	toggle.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	toggle.text_direction = Control.TEXT_DIRECTION_RTL
 	toggle.text = "تست مأموریت"
 	toggle.tooltip_text = "انتخاب مستقیم مرحله و مأموریت برای تست"
 	toggle.add_theme_font_size_override("font_size", 18)
-	toggle.position = Vector2(20, 650)
-	toggle.size = Vector2(150, 48)
 	toggle.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(toggle)
 	toggle.pressed.connect(toggle_panel)
@@ -37,8 +38,6 @@ func build_controls() -> void:
 	panel = Panel.new()
 	panel.name = "DevelopmentMissionPanel"
 	panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	panel.position = Vector2(20, 300)
-	panel.size = PANEL_SIZE
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", make_panel_style())
 	add_child(panel)
@@ -95,6 +94,18 @@ func build_controls() -> void:
 	refresh_mission_picker()
 	mission_picker.select(1)
 	refresh_availability()
+
+func layout_controls() -> void:
+	if not is_instance_valid(toggle) or not is_instance_valid(panel):
+		return
+	var safe_rect := ResponsiveLayout.safe_rect(size)
+	var safe_scale := safe_rect.size.x / ResponsiveLayout.DESIGN_SIZE.x
+	toggle.position = safe_rect.position + Vector2(20, 650) * safe_scale
+	toggle.size = Vector2(150, 48)
+	toggle.scale = Vector2.ONE * safe_scale
+	panel.position = safe_rect.position + Vector2(20, 300) * safe_scale
+	panel.size = PANEL_SIZE
+	panel.scale = Vector2.ONE * safe_scale
 
 func add_label(text_value: String, position_value: Vector2, size_value: Vector2, font_size: int) -> void:
 	var label := Label.new()

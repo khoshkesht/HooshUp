@@ -100,8 +100,17 @@ func show_screen_view(view_id: String, texture: Texture2D, fallback_zoom := 1.0)
 	stretch_to_fit_viewport.set_pan_enabled(get_view_pan_enabled(view_id))
 	stretch_to_fit_viewport.show_scene(texture, get_view_zoom(view_id, fallback_zoom))
 
+func layout_design_viewports() -> void:
+	var safe_rect := ResponsiveLayout.safe_rect(size)
+	for viewport in [pan_zoom_viewport, stretch_to_fit_viewport]:
+		viewport.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		viewport.position = safe_rect.position
+		viewport.size = safe_rect.size
+
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
+	layout_design_viewports()
+	resized.connect(layout_design_viewports)
 	GlobalMenu.set_toolbar_visible(true)
 	background_music.stream = BACKGROUND_MUSIC
 	var background_music_stream := background_music.stream as AudioStreamMP3
