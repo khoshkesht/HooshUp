@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://lonswah3015a"
-path="res://.godot/imported/passlevel.png-d6aecdd6db7cb44582c6252e7afae617.ctex"
+uid="uid://ocvs4dcabvl7"
+path="res://.godot/imported/level-pessed.png-bbe95c357813b34faa69e7f707c5f256.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/pics/ui/passlevel.png"
-dest_files=["res://.godot/imported/passlevel.png-d6aecdd6db7cb44582c6252e7afae617.ctex"]
+source_file="res://assets/pics/ui/level-pessed.png"
+dest_files=["res://.godot/imported/level-pessed.png-bbe95c357813b34faa69e7f707c5f256.ctex"]
 
 [params]
 

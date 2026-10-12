@@ -2,7 +2,7 @@ class_name SettingsPanel
 extends Control
 
 signal settings_saved
-
+const TEXT_COLOR := Color("4a2917")
 const PANEL_TEXTURE := preload("res://assets/pics/ui/menu-settings.png")
 const CLOSE_TEXTURE := preload("res://assets/pics/ui/close.png")
 const MUSIC_ON_TEXTURE := preload("res://assets/pics/ui/mudic-on.png")
@@ -68,8 +68,8 @@ func build() -> void:
 	name_input.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	name_input.placeholder_text = "نام خودت را بنویس"
 	name_input.add_theme_font_size_override("font_size", 25)
-	name_input.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
-	name_input.add_theme_color_override("font_placeholder_color", Color(0.64, 0.7, 0.85))
+	name_input.add_theme_color_override("font_color", TEXT_COLOR)
+	name_input.add_theme_color_override("font_placeholder_color", TEXT_COLOR)
 	var input_style := StyleBoxEmpty.new()
 	name_input.add_theme_stylebox_override("normal", input_style)
 	name_input.add_theme_stylebox_override("focus", input_style)
@@ -81,7 +81,7 @@ func build() -> void:
 	add_avatar_button(2, avatar_slots[1])
 	add_avatar_button(6, avatar_slots[2])
 	add_avatar_button(7, avatar_slots[3])
-	add_label("MusicLabel", "موسیقی", Vector2(835, 334), Vector2(245, 60), 27, HORIZONTAL_ALIGNMENT_CENTER)
+	add_label("MusicLabel", "موسیقی", Vector2(910, 250), Vector2(245, 60), 27, HORIZONTAL_ALIGNMENT_CENTER)
 	music_toggle = Button.new()
 	music_toggle.name = "MusicToggle"
 	music_toggle.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -90,7 +90,7 @@ func build() -> void:
 	music_toggle.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
 	music_toggle.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
 	panel.add_child(music_toggle)
-	music_toggle.position = Vector2(675, 315)
+	music_toggle.position = Vector2(775, 225)
 	music_toggle.size = Vector2(115, 110)
 	music_toggle.mouse_filter = Control.MOUSE_FILTER_STOP
 	music_toggle.pressed.connect(toggle_music)
@@ -101,7 +101,7 @@ func build() -> void:
 	music_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	music_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(music_icon)
-	music_icon.position = Vector2(709, 350)
+	music_icon.position = Vector2(800, 260)
 	music_icon.size = Vector2(47, 39)
 	var save_button := add_button("Save", "", Vector2(430, 535), Vector2(340, 92))
 	save_button.flat = true
@@ -133,7 +133,7 @@ func add_label(node_name: String, text_value: String, position_value: Vector2, s
 	label.text_direction = Control.TEXT_DIRECTION_RTL
 	label.horizontal_alignment = alignment
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
+	label.add_theme_color_override("font_color", TEXT_COLOR)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.text = text_value
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE

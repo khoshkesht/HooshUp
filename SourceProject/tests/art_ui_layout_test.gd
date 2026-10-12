@@ -74,7 +74,7 @@ func check_frame(control: Control, ui_root: MobileUiRoot, label: String) -> void
 
 func check_menu_art_targets(menu: Control) -> void:
 	var image: TextureRect = menu.menu_panel
-	check(image.texture.get_size() == Vector2i(1774, 887), "Menu art uses native geometry")
+	check(image.texture.get_size() == Vector2(1774, 887), "Menu art uses native geometry")
 	var controls := image.get_node("MenuContent") as Control
 	var target_centers := {
 		"HomeButton": Vector2(204, 608),

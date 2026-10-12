@@ -65,6 +65,7 @@ func _ready() -> void:
 	resized.connect(refresh_layout)
 	ArtUiFrame.anchor_children($MenuPanel/MenuContent, MENU_ART_SIZE)
 	menu_frame = ArtUiFrame.wrap(self, menu_panel, MENU_ART_SIZE, Vector2(1800, 900))
+	move_child(exit_confirmation, get_child_count() - 1)
 	call_deferred("mount_confirmation_frames")
 	call_deferred("prepare_menu")
 	refresh_progress_values()
