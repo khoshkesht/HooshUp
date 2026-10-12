@@ -42,8 +42,6 @@ var after_hotspots_active := false
 var player_movement: PlayerMovement
 var intro_is_open := false
 var unlocked_hotspot_ids: Dictionary = {}
-var monitor_app_rect := Rect2()
-var monitor_app_design_size := Vector2.ZERO
 var monitor_app_data: Dictionary = {}
 var read_monitor_tool_ids: Dictionary = {}
 var all_monitor_tools_read := false
@@ -178,6 +176,13 @@ func mount_mission_ui(control: Control, design := Vector2.ZERO) -> void:
 		return
 	var canvas_design := design if design != Vector2.ZERO else level_image.size
 	var surface := MissionUiSurface.mount(mission_ui_root, control, canvas_design)
+	control.set_meta("mission_surface", surface)
+	mission_surfaces.append(surface)
+
+func mount_mission_image_ui(control: Control) -> void:
+	if control.has_meta("mission_surface"):
+		return
+	var surface := MissionUiSurface.mount_on_image(mission_ui_root, control, level_image)
 	control.set_meta("mission_surface", surface)
 	mission_surfaces.append(surface)
 
@@ -408,7 +413,7 @@ func show_intro_monitor_chat(chat_data: Dictionary) -> void:
 	var hint_tween := send_hint.create_tween().set_loops()
 	hint_tween.tween_property(send_hint, "modulate:a", 0.2, 0.55)
 	hint_tween.tween_property(send_hint, "modulate:a", 1.0, 0.55)
-	mount_mission_ui(chat)
+	mount_mission_image_ui(chat)
 	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.06)), true)
 	send_button.disabled = false
 	await send_button.pressed
@@ -442,14 +447,12 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	var game := Control.new()
 	game.name = "ToolMatchGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	game.mouse_filter = Control.MOUSE_FILTER_STOP
-	# This is an on-screen mini-game, not an effect on the zoomed scene image.
-	# A contained design canvas keeps every question and choice visible on phones.
+	game.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mission_ui_root.add_child(game)
 	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	await get_tree().process_frame
 	var game_canvas := Control.new()
-	game_canvas.name = "SafeCanvas"
+	game_canvas.name = "LaptopCanvas"
 	game_canvas.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	game_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game.add_child(game_canvas)
@@ -463,16 +466,8 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	chat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	chat.stretch_mode = TextureRect.STRETCH_SCALE
 	chat.mouse_filter = Control.MOUSE_FILTER_STOP
-	# Match the preceding laptop view in design coordinates, independently from
-	# the cover-scaled scene image used behind it.
-	var laptop_zoom := get_view_zoom("laptop_chat", 1.2)
-	var design_scene_size := ResponsiveLayout.DESIGN_SIZE * laptop_zoom
-	var design_scene_position := (ResponsiveLayout.DESIGN_SIZE - design_scene_size) * 0.5
-	chat.size = Vector2(design_scene_size.x * 0.70, design_scene_size.y * 0.63)
-	chat.position = design_scene_position + Vector2(
-		design_scene_size.x * 0.15,
-		design_scene_size.y * 0.145
-	)
+	chat.size = Vector2(game_canvas.size.x * 0.70, game_canvas.size.y * 0.63)
+	chat.position = Vector2(game_canvas.size.x * 0.15, game_canvas.size.y * 0.145)
 	game_canvas.add_child(chat)
 
 	var title := make_game_label(str(game_data.get("title", "")), roundi(chat.size.y * 0.055), HORIZONTAL_ALIGNMENT_CENTER)
@@ -513,7 +508,7 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	game.set_meta("tool_match_current_task", 0)
 	game.set_meta("tool_match_transitioning", false)
 	game.set_meta("tool_match_data", game_data)
-	mount_mission_ui(game_canvas, ResponsiveLayout.WORLD_DESIGN_SIZE)
+	mount_mission_image_ui(game_canvas)
 	game.tree_exiting.connect(func() -> void: if is_instance_valid(game_canvas): game_canvas.queue_free())
 	render_tool_match_question(game, question_box, feedback, tool_buttons, tasks)
 
@@ -521,7 +516,7 @@ func layout_tool_match_canvas(game: Control, game_canvas: Control) -> void:
 	if not is_instance_valid(game) or not is_instance_valid(game_canvas):
 		return
 	game_canvas.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	game_canvas.size = ResponsiveLayout.DESIGN_SIZE
+	game_canvas.size = level_image.size
 	game_canvas.scale = Vector2.ONE
 	game_canvas.position = Vector2.ZERO
 
@@ -672,7 +667,7 @@ func show_update_progress(update_data: Dictionary) -> void:
 	progress.add_theme_stylebox_override("fill", make_game_style(Color("3badae"), Color("8bd8d2")))
 	panel.add_child(progress)
 
-	mount_mission_ui(overlay)
+	mount_mission_image_ui(overlay)
 	var tween := create_tween()
 	tween.tween_property(progress, "value", 100.0, maxf(0.1, float(update_data.get("duration", 3.0))))
 	await tween.finished
@@ -735,18 +730,20 @@ func show_monitor_app(app_data: Dictionary) -> void:
 	app.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	app.stretch_mode = TextureRect.STRETCH_SCALE
 	app.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var normalized_position: Array = app_data.get("position", [0.5, 0.5])
-	var normalized_size: Array = app_data.get("size", [0.7, 0.63])
 	effects.add_child(app)
-	app.size = Vector2(float(normalized_size[0]) * level_image.size.x, float(normalized_size[1]) * level_image.size.y)
-	app.position = Vector2(
-		float(normalized_position[0]) * level_image.size.x - app.size.x * 0.5,
-		float(normalized_position[1]) * level_image.size.y - app.size.y * 0.5
-	)
-	monitor_app_rect = Rect2(app.position, app.size)
-	monitor_app_design_size = level_image.size
+	var app_rect := get_monitor_app_rect()
+	app.position = app_rect.position
+	app.size = app_rect.size
 	add_monitor_card_buttons(app)
-	mount_mission_ui(app, monitor_app_design_size)
+	mount_mission_image_ui(app)
+
+func get_monitor_app_rect() -> Rect2:
+	var normalized_position: Array = monitor_app_data.get("position", [0.5, 0.5])
+	var normalized_size: Array = monitor_app_data.get("size", [0.7, 0.63])
+	var image_size := level_image.size
+	var app_size := Vector2(float(normalized_size[0]) * image_size.x, float(normalized_size[1]) * image_size.y)
+	var app_center := Vector2(float(normalized_position[0]) * image_size.x, float(normalized_position[1]) * image_size.y)
+	return Rect2(app_center - app_size * 0.5, app_size)
 
 func add_monitor_card_buttons(app: TextureRect) -> void:
 	var card_order := ["idea", "write", "image", "explain", "plan"]
@@ -830,13 +827,14 @@ func show_monitor_chat(tool: Dictionary) -> void:
 	chat.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chat.set_meta("tool_id", str(tool.get("id", "")))
 	effects.add_child(chat)
-	chat.position = monitor_app_rect.position
-	chat.size = monitor_app_rect.size
+	var app_rect := get_monitor_app_rect()
+	chat.position = app_rect.position
+	chat.size = app_rect.size
 	var response_box := add_monitor_chat_boxes(chat, tool)
 	var question_box := chat.find_child("Question", true, false) as Label
 	var acknowledge_button := chat.get_node("Acknowledge") as Button
 	acknowledge_button.hide()
-	mount_mission_ui(chat, monitor_app_design_size)
+	mount_mission_image_ui(chat)
 	await type_chat_sequence(question_box, str(tool.get("title", "#")), response_box, str(tool.get("response", "#")))
 	if is_instance_valid(acknowledge_button):
 		acknowledge_button.show()
@@ -970,10 +968,11 @@ func show_monitor_app_from_rect() -> void:
 	app.stretch_mode = TextureRect.STRETCH_SCALE
 	app.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	effects.add_child(app)
-	app.position = monitor_app_rect.position
-	app.size = monitor_app_rect.size
+	var app_rect := get_monitor_app_rect()
+	app.position = app_rect.position
+	app.size = app_rect.size
 	add_monitor_card_buttons(app)
-	mount_mission_ui(app, monitor_app_design_size)
+	mount_mission_image_ui(app)
 
 func load_level_data() -> void:
 	var active_mission := ProgressStore.get_active_mission()
@@ -1191,9 +1190,9 @@ func show_choice_game(game_data: Dictionary) -> void:
 	var game := Control.new()
 	game.name = "ChoiceGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	game.mouse_filter = Control.MOUSE_FILTER_STOP
+	game.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	effects.add_child(game)
+	game.size = level_image.size
 	await get_tree().process_frame
 
 	var chat := TextureRect.new()
@@ -1238,7 +1237,7 @@ func show_choice_game(game_data: Dictionary) -> void:
 		chat.add_child(button)
 		answer_buttons.append(button)
 		button.pressed.connect(_on_choice_game_answer_pressed.bind(game, game_data, button, title, feedback, answer_buttons))
-	mount_mission_ui(game)
+	mount_mission_image_ui(game)
 	await game.tree_exited
 
 func show_presentation_path_game(game_data: Dictionary) -> void:
@@ -1246,10 +1245,12 @@ func show_presentation_path_game(game_data: Dictionary) -> void:
 	game.name = "PresentationPathGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	effects.add_child(game)
+	game.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	game.size = PresentationPathGame.DESIGN_SIZE
 	game.center_board()
 	game.set_meta("mission_surface", true)
 	game.custom_minimum_size = Vector2.ZERO
-	var surface := MissionUiSurface.mount(mission_ui_root, game, game.size)
+	var surface := MissionUiSurface.mount(mission_ui_root, game, PresentationPathGame.DESIGN_SIZE)
 	mission_surfaces.append(surface)
 	game.incorrect_route_attempted.connect(_on_presentation_path_incorrect_route)
 	await game.completed
@@ -1434,7 +1435,7 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 	response_scroll.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.15)
 	response_scroll.size = Vector2(chat.size.x * 0.74, chat.size.y * 0.22)
 	response_box.text = "..."
-	mount_mission_ui(chat)
+	mount_mission_image_ui(chat)
 	await get_tree().create_timer(1.5).timeout
 	response_box.text = ""
 	await type_chat_text(response_box, str(game_data.get("final_question", "")), float(game_data.get("character_delay", 0.025)))
@@ -1462,7 +1463,6 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 		chat.add_child(choice)
 		choices.append(choice)
 		choice.pressed.connect(_on_response_comparison_final_choice_pressed.bind(chat, choice, feedback, choices, game_data))
-	mount_mission_ui(chat)
 	await chat.tree_exited
 
 func _on_response_comparison_final_choice_pressed(chat: TextureRect, choice: Button, feedback: Label, choices: Array[Button], game_data: Dictionary) -> void:
@@ -1578,7 +1578,7 @@ func show_completion_side_story(story_data: Dictionary) -> void:
 	file_name.position = Vector2(0, file_button.size.y * 0.69)
 	file_name.size = Vector2(file_button.size.x, file_button.size.y * 0.25)
 
-	mount_mission_ui(overlay)
+	mount_mission_image_ui(overlay)
 	await file_button.pressed
 	file_button.hide()
 	var notepad := TextureRect.new()
@@ -1664,7 +1664,7 @@ func show_tool_match_intro_chat(chat_data: Dictionary) -> void:
 	var hint_tween := send_hint.create_tween().set_loops()
 	hint_tween.tween_property(send_hint, "modulate:a", 0.2, 0.55)
 	hint_tween.tween_property(send_hint, "modulate:a", 1.0, 0.55)
-	mount_mission_ui(chat)
+	mount_mission_image_ui(chat)
 	await type_chat_text(question_box, str(chat_data.get("title", "")), float(chat_data.get("question_character_delay", 0.04)), true)
 	send_button.disabled = false
 	await send_button.pressed

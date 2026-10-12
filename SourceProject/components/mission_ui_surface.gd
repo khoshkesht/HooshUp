@@ -6,6 +6,8 @@ var frame: ArtUiFrame
 var design_size := Vector2.ZERO
 var content: Control
 var metrics: Array[Dictionary] = []
+var image_canvas: Control
+var source_image: Control
 
 static func mount(host: MobileUiRoot, artwork: Control, design: Vector2) -> MissionUiSurface:
 	var surface := MissionUiSurface.new()
@@ -29,6 +31,44 @@ static func mount(host: MobileUiRoot, artwork: Control, design: Vector2) -> Miss
 	artwork.tree_exiting.connect(surface.queue_free)
 	surface.refresh_metrics()
 	return surface
+
+static func mount_on_image(host: MobileUiRoot, artwork: Control, image: Control) -> MissionUiSurface:
+	var surface := MissionUiSurface.new()
+	surface.name = artwork.name + "Surface"
+	surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(surface)
+	surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	surface.design_size = image.size
+	surface.source_image = image
+	var canvas := Control.new()
+	canvas.name = "ImageCanvas"
+	canvas.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.size = image.size
+	surface.add_child(canvas)
+	surface.image_canvas = canvas
+	var rect := Rect2(artwork.position, artwork.size)
+	artwork.reparent(canvas, false)
+	ArtUiFrame.anchor(artwork, rect, surface.design_size)
+	surface.content = artwork
+	surface.register_children(artwork)
+	canvas.resized.connect(surface.refresh_metrics)
+	artwork.tree_exiting.connect(surface.queue_free)
+	surface.sync_image_geometry()
+	return surface
+
+func _process(_delta: float) -> void:
+	if source_image != null:
+		sync_image_geometry()
+
+func sync_image_geometry() -> void:
+	if not is_instance_valid(source_image) or not is_instance_valid(image_canvas):
+		return
+	var image_to_viewport := source_image.get_global_transform_with_canvas()
+	var viewport_to_surface := get_global_transform_with_canvas().affine_inverse()
+	var image_rect := viewport_to_surface * (image_to_viewport * Rect2(Vector2.ZERO, source_image.size))
+	image_canvas.position = image_rect.position
+	image_canvas.size = image_rect.size
 
 func register_children(parent: Control) -> void:
 	for child in parent.get_children():
@@ -67,6 +107,8 @@ func _register_new_child(child: Variant) -> void:
 		refresh_metrics()
 
 func current_ratio() -> float:
+	if image_canvas != null:
+		return maxf(0.01, image_canvas.size.y / design_size.y)
 	if frame == null or not is_instance_valid(frame.artwork):
 		return 1.0
 	return maxf(0.01, frame.artwork.size.y / design_size.y)

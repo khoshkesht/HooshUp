@@ -25,13 +25,20 @@ func _ready() -> void:
 		var payload := find_payload(data, game_spec[1])
 		check(not payload.is_empty(), game_spec[1] + " real mission data")
 		level.level_id = "level2" if game_spec[0].begins_with("level2") else "level1"
+		var is_laptop_chat_game: bool = game_spec[1] == "tool_match_game" or game_spec[1] == "choice_game"
+		if is_laptop_chat_game:
+			level.pan_zoom_viewport.hide()
+			level.level_image = level.stretch_to_fit_viewport.scene_image
+			level.effects = level.get_node("StretchToFitViewport/SceneImage/Effects")
+			level.stretch_to_fit_viewport.show_scene(load("res://assets/pics/levels/1/g/l1-1.png"), 1.1)
+			await settle()
 		level.call(game_spec[2], payload)
 		await settle()
 		var surface: MissionUiSurface
 		for candidate in level.mission_surfaces:
 			if is_instance_valid(candidate):
 				surface = candidate
-		check(surface != null, game_spec[1] + " independent surface")
+		check(surface != null, game_spec[1] + " surface")
 		if surface == null:
 			continue
 		for resolution in [Vector2i(1920, 1080), Vector2i(2400, 1080), Vector2i(2280, 1080), Vector2i(1920, 1200), Vector2i(2340, 1080)]:
@@ -42,14 +49,27 @@ func _ready() -> void:
 			root.refresh_safe_area()
 			await settle()
 			var bounds: Rect2 = root.get_global_transform() * root.get_content_rect()
-			check(bounds.grow(1).encloses(surface.frame.artwork.get_global_rect()), game_spec[1] + " safe canvas")
+			if is_laptop_chat_game:
+				check_image_alignment(surface, game_spec[1] + " laptop chat")
+			else:
+				check(bounds.grow(1).encloses(surface.frame.artwork.get_global_rect()), game_spec[1] + " safe canvas")
+			if game_spec[1] == "presentation_path_game":
+				var board: Panel = surface.content.board
+				check(surface.design_size == PresentationPathGame.DESIGN_SIZE, "Presentation uses its own design size")
+				check(board.get_global_rect().size.x >= minf(bounds.size.x, 1800.0) * 0.75, "Presentation board remains readable")
 			check(surface.content.scale == Vector2.ONE, game_spec[1] + " no root scale")
 			check_controls(surface.content, bounds)
+			if DisplayServer.get_name() != "headless" and is_laptop_chat_game and resolution == Vector2i(1920, 1080):
+				await capture("tool-match-monitor" if game_spec[1] == "tool_match_game" else "choice-monitor")
 			var before: Vector2 = surface.content.global_position
 			level.level_image.position += Vector2(200, 100)
 			level.level_image.scale = Vector2(2, 2)
 			await settle()
-			check(surface.content.global_position.is_equal_approx(before), game_spec[1] + " independent from image pan/zoom")
+			if is_laptop_chat_game:
+				check_image_alignment(surface, game_spec[1] + " after image pan and zoom")
+				check(not surface.content.global_position.is_equal_approx(before), game_spec[1] + " moves with image")
+			else:
+				check(surface.content.global_position.is_equal_approx(before), game_spec[1] + " independent from image pan/zoom")
 			level.level_image.scale = Vector2.ONE
 			if DisplayServer.get_name() != "headless" and resolution == Vector2i(2340, 1080):
 				await capture(game_spec[1])
@@ -84,8 +104,19 @@ func _ready() -> void:
 			if child is MissionUiSurface or child.name == "ToolMatchGame":
 				child.queue_free()
 		await settle()
+		if is_laptop_chat_game:
+			level.stretch_to_fit_viewport.hide()
+			level.level_image = level.get_node("PanZoomViewport/World/LevelImage")
+			level.effects = level.get_node("PanZoomViewport/World/LevelImage/Effects")
+			level.pan_zoom_viewport.show()
 	# کارت‌های هنری، بازگشت از چت، و کنترل‌هایی که بعد از Await ساخته می‌شوند.
 	var mission_one: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/levels/level1_mission1.json"))
+	get_tree().root.size = Vector2i(1920, 1080)
+	level.pan_zoom_viewport.hide()
+	level.level_image = level.stretch_to_fit_viewport.scene_image
+	level.effects = level.get_node("StretchToFitViewport/SceneImage/Effects")
+	level.stretch_to_fit_viewport.show_scene(load("res://assets/pics/levels/1/g/l1-1.png"), 1.1)
+	await settle()
 	level.level_id = "level1"
 	level.show_monitor_app(find_payload(mission_one, "monitor_app"))
 	await settle()
@@ -94,11 +125,24 @@ func _ready() -> void:
 		if is_instance_valid(candidate):
 			app = candidate.content as TextureRect
 	check(app.texture.resource_path == "res://assets/pics/ui/hooshup1.png", "Original tool cards artwork")
+	var image_surface := app.get_meta("mission_surface") as MissionUiSurface
+	check_image_alignment(image_surface, "Monitor cards")
+	if DisplayServer.get_name() != "headless":
+		await capture("monitor-image")
+	get_tree().root.size = Vector2i(2280, 1080)
+	await settle()
+	check_image_alignment(image_surface, "Monitor cards after viewport resize")
+	level.level_image.position += Vector2(113, 47)
+	await settle()
+	check_image_alignment(image_surface, "Monitor cards after image pan")
 	app.queue_free()
 	await settle()
 	level.show_monitor_app_from_rect()
 	await settle()
 	check(level.get_mission_effects().any(func(node: Node) -> bool: return node.name == "MonitorApp"), "Return to cards retains independent UI")
+	for effect in level.get_mission_effects():
+		if effect.name == "MonitorApp":
+			check_image_alignment(effect.get_meta("mission_surface") as MissionUiSurface, "Returned monitor cards")
 	for effect in level.get_mission_effects():
 		effect.queue_free()
 	await settle()
@@ -218,6 +262,24 @@ func check_controls(parent: Control, bounds: Rect2) -> void:
 			check(child.layout_direction == Control.LAYOUT_DIRECTION_LTR, child.name + " physical LTR")
 		if not child is ScrollContainer:
 			check_controls(child, bounds)
+
+func check_image_alignment(surface: MissionUiSurface, label: String) -> void:
+	check(surface != null and surface.source_image == level.level_image, label + " bound to scene image")
+	if surface == null:
+		return
+	var image_rect: Rect2 = level.level_image.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, level.level_image.size)
+	var canvas_rect: Rect2 = surface.image_canvas.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, surface.image_canvas.size)
+	check(image_rect.is_equal_approx(canvas_rect), label + " follows image transform")
+	if surface.content.name == "MonitorApp":
+		var expected_rect: Rect2 = level.level_image.get_global_transform_with_canvas() * level.get_monitor_app_rect()
+		var actual_rect: Rect2 = surface.content.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, surface.content.size)
+		check(expected_rect.is_equal_approx(actual_rect), label + " artwork matches monitor coordinates")
+	if surface.content.name == "LaptopCanvas" or surface.content.name == "ChoiceGame":
+		var chat: TextureRect = surface.content.get_node("ToolMatchChat") if surface.content.name == "LaptopCanvas" else surface.content.get_child(0) as TextureRect
+		var chat_rect := Rect2(level.level_image.size * Vector2(0.15, 0.145), level.level_image.size * Vector2(0.70, 0.63))
+		var expected_chat: Rect2 = level.level_image.get_global_transform_with_canvas() * chat_rect
+		var actual_chat: Rect2 = chat.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, chat.size)
+		check(expected_chat.is_equal_approx(actual_chat), label + " artwork matches laptop monitor")
 
 func find_payload(value: Variant, key: String) -> Dictionary:
 	if value is Dictionary:
