@@ -7,6 +7,7 @@ const TOOLBAR_SCENE := preload("res://components/game_toolbar.tscn")
 const TOOLBAR_DISPLAY_SCALE := 0.44
 const HINT_PANEL_SIZE := Vector2(640, 300)
 const HINT_PANEL_POSITION := Vector2(320, 210)
+const MENU_ART_SIZE := Vector2(1774, 887)
 
 @onready var menu_panel: TextureRect = $MenuPanel
 @onready var avatar: TextureRect = $MenuPanel/MenuContent/Avatar
@@ -62,8 +63,8 @@ func _ready() -> void:
 	hint_confirmation = build_hint_confirmation()
 	add_child(hint_confirmation)
 	resized.connect(refresh_layout)
-	ArtUiFrame.anchor_children($MenuPanel/MenuContent, Vector2(1280, 720), 1.5)
-	menu_frame = ArtUiFrame.wrap(self, menu_panel, Vector2(1280, 720), Vector2(1800, 1012.5))
+	ArtUiFrame.anchor_children($MenuPanel/MenuContent, MENU_ART_SIZE)
+	menu_frame = ArtUiFrame.wrap(self, menu_panel, MENU_ART_SIZE, Vector2(1800, 900))
 	call_deferred("mount_confirmation_frames")
 	call_deferred("prepare_menu")
 	refresh_progress_values()

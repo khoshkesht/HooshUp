@@ -50,6 +50,7 @@ func _ready() -> void:
 			await get_tree().create_timer(0.35).timeout
 			await settle()
 			check_frame(menu.menu_panel, GlobalMenu.overlay_root, "menu")
+			check_menu_art_targets(menu)
 			var original: Vector2 = menu.user_name.global_position
 			TranslationServer.set_locale("ar")
 			await settle()
@@ -70,6 +71,30 @@ func check_frame(control: Control, ui_root: MobileUiRoot, label: String) -> void
 	var bounds := ui_root.get_global_transform() * ui_root.get_content_rect()
 	check(bounds.grow(1).encloses(control.get_global_rect()), label + " safe bounds")
 	check(control.scale.is_equal_approx(Vector2.ONE), label + " no manual scale")
+
+func check_menu_art_targets(menu: Control) -> void:
+	var image: TextureRect = menu.menu_panel
+	check(image.texture.get_size() == Vector2i(1774, 887), "Menu art uses native geometry")
+	var controls := image.get_node("MenuContent") as Control
+	var target_centers := {
+		"HomeButton": Vector2(204, 608),
+		"BadgesButton": Vector2(479, 608),
+		"SettingsButton": Vector2(751, 608),
+		"ProfileButton": Vector2(1020, 608),
+		"BackButton": Vector2(1292, 608),
+		"ExitButton": Vector2(1567, 608),
+		"StageButton": Vector2(1360, 352),
+		"CloseButton": Vector2(1645, 144),
+	}
+	for node_name in target_centers:
+		var button := controls.get_node(node_name) as Button
+		var image_point := image.get_global_transform_with_canvas().affine_inverse() * (button.get_global_transform_with_canvas() * (button.size * 0.5))
+		check(image_point.distance_to(target_centers[node_name]) < 8.0, node_name + " touch center matches image")
+		check(button.size.x >= 100 and button.size.y >= 100, node_name + " touch size")
+	var dark_brown := Color(0.29, 0.16, 0.09, 1)
+	for label_name in ["UserName", "StarLabel", "StarValue", "ScoreLabel", "ScoreValue", "StageLabel", "StageValue"]:
+		var label := controls.get_node(label_name) as Label
+		check(label.get_theme_color("font_color").is_equal_approx(dark_brown), label_name + " uses dark brown")
 
 func check(condition: bool, message: String) -> void:
 	checks += 1
