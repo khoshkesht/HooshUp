@@ -41,7 +41,7 @@ func _ready() -> void:
 		check(surface != null, game_spec[1] + " surface")
 		if surface == null:
 			continue
-		for resolution in [Vector2i(1920, 1080), Vector2i(2400, 1080), Vector2i(2280, 1080), Vector2i(1920, 1200), Vector2i(2340, 1080)]:
+		for resolution in [Vector2i(1920, 1080), Vector2i(2258, 1080), Vector2i(2400, 1080), Vector2i(2280, 1080), Vector2i(1920, 1200), Vector2i(2340, 1080)]:
 			get_tree().root.size = resolution
 			await settle()
 			var root: MobileUiRoot = level.mission_ui_root
@@ -51,6 +51,8 @@ func _ready() -> void:
 			var bounds: Rect2 = root.get_global_transform() * root.get_content_rect()
 			if is_laptop_chat_game:
 				check_image_alignment(surface, game_spec[1] + " laptop chat")
+				if game_spec[1] == "tool_match_game":
+					check_tool_choices(surface)
 			else:
 				check(bounds.grow(1).encloses(surface.frame.artwork.get_global_rect()), game_spec[1] + " safe canvas")
 			if game_spec[1] == "presentation_path_game":
@@ -61,12 +63,18 @@ func _ready() -> void:
 			check_controls(surface.content, bounds)
 			if DisplayServer.get_name() != "headless" and is_laptop_chat_game and resolution == Vector2i(1920, 1080):
 				await capture("tool-match-monitor" if game_spec[1] == "tool_match_game" else "choice-monitor")
+			if DisplayServer.get_name() != "headless" and game_spec[1] == "tool_match_game" and resolution == Vector2i(2258, 1080):
+				await capture("tool-match-phone-aspect")
+			if DisplayServer.get_name() != "headless" and game_spec[1] == "tool_match_game" and resolution == Vector2i(2258, 1080):
+				await capture("tool-match-phone-aspect")
 			var before: Vector2 = surface.content.global_position
 			level.level_image.position += Vector2(200, 100)
 			level.level_image.scale = Vector2(2, 2)
 			await settle()
 			if is_laptop_chat_game:
 				check_image_alignment(surface, game_spec[1] + " after image pan and zoom")
+				if game_spec[1] == "tool_match_game":
+					check_tool_choices(surface)
 				check(not surface.content.global_position.is_equal_approx(before), game_spec[1] + " moves with image")
 			else:
 				check(surface.content.global_position.is_equal_approx(before), game_spec[1] + " independent from image pan/zoom")
@@ -280,6 +288,21 @@ func check_image_alignment(surface: MissionUiSurface, label: String) -> void:
 		var expected_chat: Rect2 = level.level_image.get_global_transform_with_canvas() * chat_rect
 		var actual_chat: Rect2 = chat.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, chat.size)
 		check(expected_chat.is_equal_approx(actual_chat), label + " artwork matches laptop monitor")
+
+func check_tool_choices(surface: MissionUiSurface) -> void:
+	var chat: TextureRect = surface.content.get_node("ToolMatchChat")
+	var grid: GridContainer = chat.get_node("ToolChoices")
+	var chat_rect := chat.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, chat.size)
+	var grid_rect := grid.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, grid.size)
+	check(chat_rect.grow(1).encloses(grid_rect), "Tool choices grid stays in laptop chat")
+	check(grid.layout_direction == Control.LAYOUT_DIRECTION_LTR, "Tool choices geometry stays LTR")
+	check(grid.get_child_count() == 4, "Tool choices has four buttons")
+	for child in grid.get_children():
+		var button := child as Button
+		check(button != null, "Tool choice is a button")
+		if button != null:
+			var button_rect := button.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, button.size)
+			check(grid_rect.grow(1).encloses(button_rect), "Tool choice remains inside grid")
 
 func find_payload(value: Variant, key: String) -> Dictionary:
 	if value is Dictionary:

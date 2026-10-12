@@ -489,18 +489,30 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	var tools: Array = game_data.get("tools", [])
 	var tasks: Array = game_data.get("tasks", [])
 	var tool_buttons: Array[Button] = []
+	var choices_grid := GridContainer.new()
+	choices_grid.name = "ToolChoices"
+	choices_grid.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	choices_grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	choices_grid.columns = 2
+	choices_grid.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.40)
+	choices_grid.size = Vector2(chat.size.x * 0.74, chat.size.y * 0.27)
+	choices_grid.add_theme_constant_override("h_separation", roundi(chat.size.x * 0.02))
+	choices_grid.add_theme_constant_override("v_separation", roundi(chat.size.y * 0.03))
+	chat.add_child(choices_grid)
 	for index in tools.size():
 		var tool: Dictionary = tools[index]
 		var button := MissionButton.new()
 		button.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		button.text_direction = Control.TEXT_DIRECTION_RTL
 		button.text = "%s  %s" % [str(tool.get("icon", "")), str(tool.get("text", ""))]
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.clip_text = true
 		button.set_meta("tool_id", str(tool.get("id", "")))
 		button.add_theme_font_size_override("font_size", roundi(chat.size.y * 0.045))
 		button.add_theme_color_override("font_color", Color("ecf7ff"))
-		button.position = Vector2(chat.size.x * (0.16 + 0.38 * (index % 2)), chat.size.y * (0.40 + 0.15 * (index / 2)))
-		button.size = Vector2(chat.size.x * 0.36, chat.size.y * 0.12)
-		chat.add_child(button)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		choices_grid.add_child(button)
 		tool_buttons.append(button)
 		button.pressed.connect(_on_tool_match_answer_pressed.bind(game, button, question_box, feedback, tool_buttons, tasks))
 	if tasks.is_empty():
