@@ -46,6 +46,7 @@
       "dialogue": {
         "presentation": "phone_message",
         "text": " سلام! رو تحقیق کار کردی؟ من دارم سرچ میکنم",
+        "font_size": 19,
         "close_text": "آره، مشغولم"
       }
     },

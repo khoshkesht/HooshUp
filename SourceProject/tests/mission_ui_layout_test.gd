@@ -23,6 +23,8 @@ func _ready() -> void:
 		["level2_mission2", "clue_connection_game", "show_clue_connection_game"]
 	]
 	for game_spec in games:
+		if "--stage2-games" in OS.get_cmdline_user_args() and not game_spec[0].begins_with("level2"):
+			continue
 		if "--mission-games" in OS.get_cmdline_user_args() and not game_spec[0].begins_with("level1"):
 			continue
 		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/levels/%s.json" % game_spec[0]))
@@ -78,6 +80,10 @@ func _ready() -> void:
 				check_choices_grid(surface.content.get_node("ResponseComparisonBoard"), "ResponseChoices", 3)
 			check(surface.content.scale == Vector2.ONE, game_spec[1] + " no root scale")
 			check_controls(surface.content, bounds)
+			if game_spec[1] == "paper_sort_game":
+				check_paper_layout(surface.content, bounds)
+			elif game_spec[1] == "clue_connection_game":
+				check_clue_layout(surface.content)
 			if DisplayServer.get_name() != "headless" and is_laptop_chat_game and resolution == Vector2i(1920, 1080):
 				await capture("tool-match-monitor" if game_spec[1] == "tool_match_game" else "choice-monitor")
 			if DisplayServer.get_name() != "headless" and game_spec[1] == "tool_match_game" and resolution == Vector2i(2258, 1080):
@@ -104,15 +110,19 @@ func _ready() -> void:
 				await capture(game_spec[1])
 		if game_spec[1] == "clue_connection_game":
 			var clue: Button = surface.content.find_child("Clue0", true, false)
+			var motion := InputEventMouseMotion.new()
+			motion.position = clue.get_global_transform_with_canvas() * (clue.size * 0.5)
+			get_viewport().push_input(motion)
+			await settle()
 			var event := InputEventMouseButton.new()
 			event.button_index = MOUSE_BUTTON_LEFT
-			event.position = clue.get_global_transform() * (clue.size * 0.5)
+			event.position = motion.position
 			event.pressed = true
 			get_viewport().push_input(event)
 			event.pressed = false
 			get_viewport().push_input(event)
 			await settle()
-			check(surface.content.get_meta("selected_clue", null) == clue, "Displayed clue receives viewport input")
+			check(surface.content.has_meta("selected_clue") and surface.content.get_meta("selected_clue") == clue, "Displayed clue receives viewport input")
 		if game_spec[1] == "paper_sort_game":
 			var game := surface.content
 			var piece: TextureRect = game.find_child("PaperPiece*", true, false)
@@ -138,7 +148,7 @@ func _ready() -> void:
 			level.level_image = level.get_node("PanZoomViewport/World/LevelImage")
 			level.effects = level.get_node("PanZoomViewport/World/LevelImage/Effects")
 			level.pan_zoom_viewport.show()
-	if "--mission-games" in OS.get_cmdline_user_args():
+	if "--mission-games" in OS.get_cmdline_user_args() or "--stage2-games" in OS.get_cmdline_user_args():
 		print("MISSION_UI_TEST checks=%d failures=%d" % [checks, failures.size()])
 		for failure in failures:
 			push_error(failure)
@@ -353,6 +363,44 @@ func check_path_controls(game: PresentationPathGame) -> void:
 		check(rotor._has_point(rotor.size * 0.5), "Path rotor center receives touch")
 	var expected_launch := Vector2(876, 486) * board_ratio
 	check(game.launch_button.position.is_equal_approx(expected_launch), "Path launch stays in its design position")
+
+func check_paper_layout(game: Control, bounds: Rect2) -> void:
+	check_stage2_text_frames(game)
+	for child in game.get_children():
+		if child is TextureRect and str(child.name).begins_with("PaperPiece"):
+			var expected: Vector2 = child.get_meta("home_normalized") * game.size
+			check(child.position.is_equal_approx(expected), child.name + " stays at its starting position")
+			check(bounds.grow(1).encloses(child.get_global_rect()), child.name + " visible inside safe area")
+			check(child.layout_direction == Control.LAYOUT_DIRECTION_LTR, child.name + " physical LTR")
+		elif child is Panel and str(child.name).begins_with("PaperSlot"):
+			check(bounds.grow(1).encloses(child.get_global_rect()), child.name + " drop target visible")
+
+func check_clue_layout(game: Control) -> void:
+	check_stage2_text_frames(game)
+	var board := game.get_node("ClueBoard") as Panel
+	check(board.position.is_equal_approx(game.size * Vector2(0.05, 0.06)), "Clue board centered in play area")
+	var invitation := board.get_node("Invitation") as Panel
+	check(invitation.position.is_equal_approx(board.size * Vector2(0.49, 0.23)), "Invitation stays on right side of board")
+	for child in board.get_children():
+		if child is Button and str(child.name).begins_with("Clue"):
+			var index := str(child.name).trim_prefix("Clue").to_int()
+			var expected := board.size * Vector2(0.05 + 0.20 * (index % 2), 0.24 + 0.155 * (index / 2))
+			check(child.position.is_equal_approx(expected), child.name + " stays at its board position")
+	for child in invitation.get_children():
+		if child is Button:
+			check(invitation.get_global_rect().grow(1).encloses(child.get_global_rect()), child.name + " stays inside invitation")
+
+func check_stage2_text_frames(parent: Control) -> void:
+	for child in parent.get_children():
+		if not child is Control:
+			continue
+		if child is ScrollContainer:
+			check(parent.get_global_rect().grow(1).encloses(child.get_global_rect()), parent.name + "/" + child.name + " text stays in frame")
+			for sibling in parent.get_children():
+				if sibling is Button or (sibling is TextureRect and str(sibling.name).begins_with("PaperPiece")):
+					check(not child.get_global_rect().intersects(sibling.get_global_rect().grow(-1)), child.name + " text does not cover " + sibling.name)
+		else:
+			check_stage2_text_frames(child)
 
 func check_choices_grid(parent: Control, node_name: String, count: int) -> void:
 	var grid := parent.get_node(node_name) as GridContainer

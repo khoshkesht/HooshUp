@@ -243,7 +243,8 @@ func play_intro(intro_data: Dictionary) -> void:
 		if str(intro_dialogue.get("presentation", "")) == "phone_message":
 			phone_message_overlay.show_message(
 				str(intro_dialogue.get("text", "")),
-				str(intro_dialogue.get("close_text", "بستن"))
+				str(intro_dialogue.get("close_text", "بستن")),
+				int(intro_dialogue.get("font_size", 19))
 			)
 		else:
 			dialogue_panel.show_dialogue(intro_dialogue)
@@ -1136,7 +1137,8 @@ func _on_hotspot_activated(hotspot_data: Dictionary) -> void:
 	elif str(dialogue.get("presentation", "")) == "phone_message":
 		phone_message_overlay.show_message(
 			str(dialogue.get("text", "")),
-			str(dialogue.get("close_text", "بستن"))
+			str(dialogue.get("close_text", "بستن")),
+			int(dialogue.get("font_size", 19))
 		)
 	else:
 		dialogue_panel.show_dialogue(dialogue)
@@ -1784,7 +1786,8 @@ func show_next_dialogue_sequence_entry() -> bool:
 	if str(dialogue.get("presentation", "")) == "phone_message":
 		phone_message_overlay.show_message(
 			str(dialogue.get("text", "")),
-			str(dialogue.get("close_text", "بستن"))
+			str(dialogue.get("close_text", "بستن")),
+			int(dialogue.get("font_size", 19))
 		)
 	elif str(dialogue.get("presentation", "")) == "phone_send_message":
 		phone_message_overlay.show_sending_message(
@@ -1816,42 +1819,42 @@ func show_paper_sort_game(game_data: Dictionary) -> void:
 	var game := Control.new()
 	game.name = "PaperSortGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game.mouse_filter = Control.MOUSE_FILTER_STOP
 	game.set_meta("dragging_piece", null)
 	game.set_meta("completed", false)
-	effects.add_child(game)
+	mission_ui_root.add_child(game)
+	game.size = level_image.size
 	await get_tree().process_frame
 	var shade := ColorRect.new()
+	shade.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	shade.color = Color(0.02, 0.05, 0.12, 0.50)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game.add_child(shade)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var title := make_game_label(str(game_data.get("title", "")), roundi(game.size.y * 0.052), HORIZONTAL_ALIGNMENT_CENTER)
 	title.add_theme_color_override("font_color", Color.WHITE)
 	title.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.08, 0.9))
 	title.add_theme_constant_override("shadow_offset_x", 2)
 	title.add_theme_constant_override("shadow_offset_y", 2)
-	title.position = Vector2(game.size.x * 0.26, game.size.y * 0.035)
-	title.size = Vector2(game.size.x * 0.48, game.size.y * 0.07)
 	game.add_child(title)
+	ArtUiFrame.anchor(title, Rect2(game.size * Vector2(0.26, 0.035), game.size * Vector2(0.48, 0.07)), game.size)
 	var feedback := make_game_label(str(game_data.get("instruction", "")), roundi(game.size.y * 0.038), HORIZONTAL_ALIGNMENT_CENTER)
 	feedback.name = "Feedback"
-	feedback.position = Vector2(game.size.x * 0.28, game.size.y * 0.105)
-	feedback.size = Vector2(game.size.x * 0.44, game.size.y * 0.055)
 	game.add_child(feedback)
+	ArtUiFrame.anchor(feedback, Rect2(game.size * Vector2(0.28, 0.105), game.size * Vector2(0.44, 0.055)), game.size)
 	var target_positions := [Vector2(0.30, 0.24), Vector2(0.52, 0.24), Vector2(0.30, 0.54), Vector2(0.52, 0.54)]
 	var correct_ids: Array = game_data.get("correct_pieces", ["p1", "p2", "p3", "p4"])
 	for index in correct_ids.size():
 		var slot := Panel.new()
 		slot.name = "PaperSlot%d" % index
+		slot.layout_direction = Control.LAYOUT_DIRECTION_LTR
+		game.add_child(slot)
 		slot.set_meta("expected_piece", str(correct_ids[index]))
 		slot.set_meta("filled", false)
 		slot.position = Vector2(game.size.x * target_positions[index].x, game.size.y * target_positions[index].y)
 		slot.size = Vector2(game.size.x * 0.21, game.size.y * 0.25)
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_theme_stylebox_override("panel", make_game_style(Color("edf5ffb8"), Color("75d7e1")))
-		game.add_child(slot)
 	var piece_ids: Array = game_data.get("pieces", ["p1", "p2", "p3", "p4", "p5", "p6"])
 	piece_ids.shuffle()
 	game.gui_input.connect(_on_paper_game_input.bind(game, feedback, correct_ids.size(), game_data))
@@ -1859,6 +1862,7 @@ func show_paper_sort_game(game_data: Dictionary) -> void:
 	for index in piece_ids.size():
 		var piece := TextureRect.new()
 		piece.name = "PaperPiece%s" % str(piece_ids[index])
+		piece.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		piece.texture = load("res://assets/pics/levels/2/%s.png" % str(piece_ids[index])) as Texture2D
 		piece.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		piece.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -1866,10 +1870,12 @@ func show_paper_sort_game(game_data: Dictionary) -> void:
 		piece.set_meta("piece_id", str(piece_ids[index]))
 		piece.set_meta("home_normalized", piece_positions[index])
 		piece.set_meta("home_position", Vector2(game.size.x * piece_positions[index].x, game.size.y * piece_positions[index].y))
+		game.add_child(piece)
 		piece.position = piece.get_meta("home_position") as Vector2
 		piece.size = Vector2(game.size.x * 0.20, game.size.y * 0.24)
-		game.add_child(piece)
 		piece.gui_input.connect(_on_paper_piece_input.bind(game, piece, feedback, correct_ids.size(), game_data))
+	# متن‌های چندخطی پیش از ثبت هندسهٔ قاب فرصت بازچینی می‌گیرند.
+	await get_tree().process_frame
 	mount_mission_ui(game)
 	await game.tree_exited
 
@@ -1965,45 +1971,40 @@ func show_clue_connection_game(game_data: Dictionary) -> void:
 	var game := Control.new()
 	game.name = "ClueConnectionGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game.mouse_filter = Control.MOUSE_FILTER_STOP
 	game.z_index = 10
 	game.set_meta("selected_clue", null)
 	game.set_meta("completed", false)
-	# This is a screen minigame, not part of the zoomable room.  Adding it to
-	# the room effects would scale and crop the board with the camera zoom.
-	add_child(game)
+	mission_ui_root.add_child(game)
+	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	await get_tree().process_frame
 
 	var dim := ColorRect.new()
 	dim.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.color = Color(0.025, 0.035, 0.06, 0.68)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game.add_child(dim)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var board := Panel.new()
 	board.name = "ClueBoard"
 	board.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	game.add_child(board)
 	# Keep the whole board inside the visible play area, including on shorter screens.
 	board.size = Vector2(game.size.x * 0.90, game.size.y * 0.88)
 	board.position = (game.size - board.size) * 0.5
 	board.add_theme_stylebox_override("panel", make_game_style(Color("6e4932cc"), Color("e8c77d")))
-	game.add_child(board)
 	var title := make_game_label(str(game_data.get("title", "")), roundi(board.size.y * 0.055) + 3, HORIZONTAL_ALIGNMENT_CENTER)
 	title.add_theme_color_override("font_color", Color("fff3cf"))
-	title.position = Vector2(board.size.x * 0.05, board.size.y * 0.04)
-	title.size = Vector2(board.size.x * 0.90, board.size.y * 0.09)
 	board.add_child(title)
+	ArtUiFrame.anchor(title, Rect2(board.size * Vector2(0.05, 0.04), board.size * Vector2(0.90, 0.09)), board.size)
 	var instruction := make_game_label(str(game_data.get("instruction", "")), roundi(board.size.y * 0.032) + 3, HORIZONTAL_ALIGNMENT_CENTER)
 	instruction.add_theme_color_override("font_color", Color("f9e6bd"))
-	instruction.position = Vector2(board.size.x * 0.08, board.size.y * 0.13)
-	instruction.size = Vector2(board.size.x * 0.84, board.size.y * 0.07)
 	board.add_child(instruction)
+	ArtUiFrame.anchor(instruction, Rect2(board.size * Vector2(0.08, 0.13), board.size * Vector2(0.84, 0.07)), board.size)
 	var feedback := make_game_label("", roundi(board.size.y * 0.030) + 3, HORIZONTAL_ALIGNMENT_CENTER)
 	feedback.name = "Feedback"
-	feedback.position = Vector2(board.size.x * 0.08, board.size.y * 0.89)
-	feedback.size = Vector2(board.size.x * 0.84, board.size.y * 0.06)
 	board.add_child(feedback)
+	ArtUiFrame.anchor(feedback, Rect2(board.size * Vector2(0.08, 0.89), board.size * Vector2(0.84, 0.06)), board.size)
 
 	var clues: Array = game_data.get("clues", [])
 	var shuffled_clues := clues.duplicate()
@@ -2026,25 +2027,25 @@ func show_clue_connection_game(game_data: Dictionary) -> void:
 		var note_color: Color = note_colors[index % note_colors.size()]
 		clue_button.add_theme_stylebox_override("normal", make_sticky_note_style(note_color, Color("bc9053")))
 		clue_button.add_theme_stylebox_override("hover", make_sticky_note_style(note_color.lightened(0.10), Color("8c6135")))
+		board.add_child(clue_button)
 		clue_button.position = Vector2(board.size.x * (0.05 + 0.20 * (index % 2)), board.size.y * (0.24 + 0.155 * (index / 2)))
 		clue_button.size = Vector2(board.size.x * 0.18, board.size.y * 0.125)
 		clue_button.pivot_offset = clue_button.size * 0.5
 		clue_button.rotation = deg_to_rad(float(note_rotations[index % note_rotations.size()]))
 		clue_button.set_meta("clue_data", clue)
-		board.add_child(clue_button)
 		clue_button.pressed.connect(_on_clue_connection_clue_pressed.bind(game, board, clue_button, instruction))
 
 	var invitation := Panel.new()
+	invitation.name = "Invitation"
 	invitation.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	board.add_child(invitation)
 	invitation.position = Vector2(board.size.x * 0.49, board.size.y * 0.23)
 	invitation.size = Vector2(board.size.x * 0.46, board.size.y * 0.61)
 	invitation.add_theme_stylebox_override("panel", make_game_style(Color("fffaf0"), Color("d7b56b")))
-	board.add_child(invitation)
 	var invitation_title := make_game_label("دعوت‌نامهٔ شب ایده‌ها", roundi(invitation.size.y * 0.065) + 3, HORIZONTAL_ALIGNMENT_CENTER)
 	invitation_title.add_theme_color_override("font_color", Color("5b3a28"))
-	invitation_title.position = Vector2(invitation.size.x * 0.08, invitation.size.y * 0.05)
-	invitation_title.size = Vector2(invitation.size.x * 0.84, invitation.size.y * 0.10)
 	invitation.add_child(invitation_title)
+	ArtUiFrame.anchor(invitation_title, Rect2(invitation.size * Vector2(0.08, 0.05), invitation.size * Vector2(0.84, 0.10)), invitation.size)
 	var slots: Array = game_data.get("slots", [])
 	for index in slots.size():
 		var slot_data: Dictionary = slots[index] as Dictionary
@@ -2061,11 +2062,13 @@ func show_clue_connection_game(game_data: Dictionary) -> void:
 		slot_button.add_theme_color_override("font_disabled_color", Color("42604a"))
 		slot_button.add_theme_stylebox_override("normal", make_sticky_note_style(Color("fff0a8"), Color("cda96a")))
 		slot_button.add_theme_stylebox_override("hover", make_sticky_note_style(Color("fff6c6"), Color("a87b3c")))
+		invitation.add_child(slot_button)
 		slot_button.position = Vector2(invitation.size.x * 0.08, invitation.size.y * (0.19 + 0.145 * index))
 		slot_button.size = Vector2(invitation.size.x * 0.84, invitation.size.y * 0.115)
 		slot_button.set_meta("slot_data", slot_data)
-		invitation.add_child(slot_button)
 		slot_button.pressed.connect(_on_clue_connection_slot_pressed.bind(game, board, slot_button, feedback, instruction, game_data))
+	# متن‌های چندخطی پیش از ثبت هندسهٔ قاب فرصت بازچینی می‌گیرند.
+	await get_tree().process_frame
 	mount_mission_ui(game, game.size)
 	await game.tree_exited
 

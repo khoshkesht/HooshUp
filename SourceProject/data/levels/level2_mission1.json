@@ -34,6 +34,7 @@
     "dialogue": {
       "presentation": "phone_message",
       "text": "برای جلسهٔ ایده‌ها از هوش‌آپ دعوت‌نامه خواستم؛ ولی انگار برای یه مراسم خیالی نوشته! کاغذا رو پاره کردم.",
+      "font_size": 18,
       "close_text": "بیا درستش کنیم"
     }
   },
@@ -67,6 +68,7 @@
         {
           "presentation": "phone_message",
           "text": "روی بورد نوشته.",
+          "font_size": 19,
           "close_text": "باشه"
         }
       ]

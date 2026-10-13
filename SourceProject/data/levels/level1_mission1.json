@@ -55,6 +55,7 @@
       "dialogue": {
         "presentation": "phone_message",
         "text": "سلام چطوری!\nتحقیق رو آماده کردی؟\nباید تحویل بدیما :(",
+        "font_size": 19,
         "close_text": "اصلا یادم نبود!",
         "choices": [
           { "id": "start_with_laptop", "text": "از لپ‌تاپ شروع می‌کنم" }

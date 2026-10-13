@@ -19,6 +19,7 @@ const GAMER_PHONE_TEXTURE := preload("res://assets/pics/ui/phone-message-new-gam
 var message_scroll: ScrollContainer
 var is_sending_message := false
 var sending_request_id := 0
+var message_font_size := 19
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -37,9 +38,10 @@ func _ready() -> void:
 	resized.connect(refresh_layout)
 	hide()
 
-func show_message(message: String, close_text := "بستن") -> void:
+func show_message(message: String, close_text := "بستن", font_size := 19) -> void:
 	sending_request_id += 1
 	is_sending_message = false
+	message_font_size = maxi(1, font_size)
 	phone.texture = DEFAULT_PHONE_TEXTURE
 	message_text.text = message
 	close_button.text = close_text
@@ -54,6 +56,7 @@ func show_sending_message(message: String, message_visible_seconds := 1.0, recei
 	sending_request_id += 1
 	var request_id := sending_request_id
 	is_sending_message = true
+	message_font_size = 19
 	phone.texture = GAMER_PHONE_TEXTURE
 	message_text.text = message
 	message_bubble.show()
@@ -98,7 +101,7 @@ func refresh_layout() -> void:
 	message_bubble.size = Vector2(screen.size.x * (0.80 if is_sending_message else 0.62), screen.size.y * 0.35)
 	message_scroll.position = Vector2(14.0 * scale_factor, 12.0 * scale_factor)
 	message_scroll.size = message_bubble.size - Vector2(28.0, 24.0) * scale_factor
-	message_text.add_theme_font_size_override("font_size", roundi(19.0 * scale_factor))
+	message_text.add_theme_font_size_override("font_size", maxi(1, roundi(message_font_size * scale_factor)))
 	close_button.size = Vector2(screen.size.x * 0.36, 40.0 * scale_factor)
 	close_button.position = Vector2((screen.size.x - close_button.size.x) * 0.5, screen.size.y * 0.68)
 	close_button.add_theme_font_size_override("font_size", roundi(18.0 * scale_factor))
