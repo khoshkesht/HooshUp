@@ -77,8 +77,9 @@ if ($Serial) {
     throw "Expected one connected and authorized device; found $($devices.Count). Use -Serial to select one."
 }
 
-$installedPath = Invoke-Adb -Arguments @('-s', $selectedDevice, 'shell', 'pm', 'path', $packageName)
-if ($installedPath -match '^package:') {
+# Listing packages succeeds even when this package is absent; pm path can exit 1.
+$installedPackages = Invoke-Adb -Arguments @('-s', $selectedDevice, 'shell', 'pm', 'list', 'packages', $packageName)
+if ($installedPackages -contains "package:$packageName") {
     Write-Host "Uninstalling $packageName from $selectedDevice..."
     Invoke-Adb -Arguments @('-s', $selectedDevice, 'uninstall', $packageName) | ForEach-Object { Write-Host $_ }
 }

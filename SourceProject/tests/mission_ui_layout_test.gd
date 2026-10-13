@@ -5,6 +5,7 @@ var failures: Array[String] = []
 var level: Control
 
 func _ready() -> void:
+	TranslationServer.set_locale("fa")
 	scene_file_path = "res://scenes/level1.tscn"
 	GlobalMenu.set_toolbar_visible(true)
 	await settle()
@@ -16,16 +17,22 @@ func _ready() -> void:
 		["level1_mission2", "tool_match_game", "show_tool_match_game"],
 		["level1_mission3", "choice_game", "show_choice_game"],
 		["level1_mission4", "response_comparison_game", "show_response_comparison_game"],
+		["level1_mission4", "response_comparison_game", "show_response_comparison_final_chat"],
 		["level1_mission5", "presentation_path_game", "show_presentation_path_game"],
 		["level2_mission1", "paper_sort_game", "show_paper_sort_game"],
 		["level2_mission2", "clue_connection_game", "show_clue_connection_game"]
 	]
 	for game_spec in games:
+		if "--mission-games" in OS.get_cmdline_user_args() and not game_spec[0].begins_with("level1"):
+			continue
 		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/levels/%s.json" % game_spec[0]))
 		var payload := find_payload(data, game_spec[1])
+		if game_spec[2] == "show_response_comparison_final_chat":
+			payload = payload.duplicate(true)
+			payload["character_delay"] = 0.0
 		check(not payload.is_empty(), game_spec[1] + " real mission data")
 		level.level_id = "level2" if game_spec[0].begins_with("level2") else "level1"
-		var is_laptop_chat_game: bool = game_spec[1] == "tool_match_game" or game_spec[1] == "choice_game"
+		var is_laptop_chat_game: bool = game_spec[1] == "tool_match_game" or game_spec[1] == "choice_game" or game_spec[2] == "show_response_comparison_final_chat"
 		if is_laptop_chat_game:
 			level.pan_zoom_viewport.hide()
 			level.level_image = level.stretch_to_fit_viewport.scene_image
@@ -34,6 +41,9 @@ func _ready() -> void:
 			await settle()
 		level.call(game_spec[2], payload)
 		await settle()
+		if game_spec[2] == "show_response_comparison_final_chat":
+			await get_tree().create_timer(2.0).timeout
+			await settle()
 		var surface: MissionUiSurface
 		for candidate in level.mission_surfaces:
 			if is_instance_valid(candidate):
@@ -53,12 +63,19 @@ func _ready() -> void:
 				check_image_alignment(surface, game_spec[1] + " laptop chat")
 				if game_spec[1] == "tool_match_game":
 					check_tool_choices(surface)
+				elif game_spec[1] == "choice_game":
+					check_answer_choices(surface)
+				else:
+					check_choices_grid(surface.content, "FinalChoices", 3)
 			else:
 				check(bounds.grow(1).encloses(surface.frame.artwork.get_global_rect()), game_spec[1] + " safe canvas")
 			if game_spec[1] == "presentation_path_game":
 				var board: Panel = surface.content.board
+				check_path_controls(surface.content)
 				check(surface.design_size == PresentationPathGame.DESIGN_SIZE, "Presentation uses its own design size")
 				check(board.get_global_rect().size.x >= minf(bounds.size.x, 1800.0) * 0.75, "Presentation board remains readable")
+			if game_spec[1] == "response_comparison_game" and not is_laptop_chat_game:
+				check_choices_grid(surface.content.get_node("ResponseComparisonBoard"), "ResponseChoices", 3)
 			check(surface.content.scale == Vector2.ONE, game_spec[1] + " no root scale")
 			check_controls(surface.content, bounds)
 			if DisplayServer.get_name() != "headless" and is_laptop_chat_game and resolution == Vector2i(1920, 1080):
@@ -75,6 +92,10 @@ func _ready() -> void:
 				check_image_alignment(surface, game_spec[1] + " after image pan and zoom")
 				if game_spec[1] == "tool_match_game":
 					check_tool_choices(surface)
+				elif game_spec[1] == "choice_game":
+					check_answer_choices(surface)
+				else:
+					check_choices_grid(surface.content, "FinalChoices", 3)
 				check(not surface.content.global_position.is_equal_approx(before), game_spec[1] + " moves with image")
 			else:
 				check(surface.content.global_position.is_equal_approx(before), game_spec[1] + " independent from image pan/zoom")
@@ -117,6 +138,12 @@ func _ready() -> void:
 			level.level_image = level.get_node("PanZoomViewport/World/LevelImage")
 			level.effects = level.get_node("PanZoomViewport/World/LevelImage/Effects")
 			level.pan_zoom_viewport.show()
+	if "--mission-games" in OS.get_cmdline_user_args():
+		print("MISSION_UI_TEST checks=%d failures=%d" % [checks, failures.size()])
+		for failure in failures:
+			push_error(failure)
+		get_tree().quit(0 if failures.is_empty() else 1)
+		return
 	# کارت‌های هنری، بازگشت از چت، و کنترل‌هایی که بعد از Await ساخته می‌شوند.
 	var mission_one: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/levels/level1_mission1.json"))
 	get_tree().root.size = Vector2i(1920, 1080)
@@ -303,6 +330,42 @@ func check_tool_choices(surface: MissionUiSurface) -> void:
 		if button != null:
 			var button_rect := button.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, button.size)
 			check(grid_rect.grow(1).encloses(button_rect), "Tool choice remains inside grid")
+
+func check_answer_choices(surface: MissionUiSurface) -> void:
+	var chat := surface.content.get_child(0) as TextureRect
+	check_choices_grid(chat, "AnswerChoices", 4)
+	var chat_rect := chat.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, chat.size)
+	var buttons := chat.find_children("*", "Button", true, false)
+	check(buttons.size() == 4, "Answer choices has four buttons")
+	for button: Button in buttons:
+		var button_rect := button.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, button.size)
+		check(chat_rect.grow(1).encloses(button_rect), "Answer choice stays inside laptop chat")
+		check(button.layout_direction == Control.LAYOUT_DIRECTION_LTR, "Answer choice geometry stays LTR")
+		check(button.text_direction == Control.TEXT_DIRECTION_RTL, "Answer choice text stays RTL")
+
+func check_path_controls(game: PresentationPathGame) -> void:
+	var board_ratio := game.board.size / Vector2(1096, 592)
+	for index in 4:
+		var rotor := game.board.get_node("Rotor%d" % index) as MissionButton
+		var center := rotor.get_global_transform_with_canvas() * (rotor.size * 0.5)
+		var expected := game.board.get_global_transform_with_canvas() * (game.route_points[index] * board_ratio)
+		check(center.is_equal_approx(expected), "Path rotor stays over its labelled node")
+		check(rotor._has_point(rotor.size * 0.5), "Path rotor center receives touch")
+	var expected_launch := Vector2(876, 486) * board_ratio
+	check(game.launch_button.position.is_equal_approx(expected_launch), "Path launch stays in its design position")
+
+func check_choices_grid(parent: Control, node_name: String, count: int) -> void:
+	var grid := parent.get_node(node_name) as GridContainer
+	check(grid != null, node_name + " uses Container")
+	if grid == null:
+		return
+	var parent_rect := parent.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, parent.size)
+	var grid_rect := grid.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, grid.size)
+	check(parent_rect.grow(1).encloses(grid_rect), node_name + " stays in frame")
+	check(grid.get_child_count() == count, node_name + " option count")
+	for button: Button in grid.get_children():
+		var button_rect := button.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, button.size)
+		check(grid_rect.grow(1).encloses(button_rect), node_name + " button stays in Container")
 
 func find_payload(value: Variant, key: String) -> Dictionary:
 	if value is Dictionary:

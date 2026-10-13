@@ -29,7 +29,8 @@ var rotation_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LTR
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	size = DESIGN_SIZE
 	custom_minimum_size = DESIGN_SIZE
 	rotation_rng.randomize()
 	resized.connect(center_board)
@@ -95,13 +96,13 @@ func build_interface() -> void:
 		rotor.add_theme_color_override("font_color", Color("e9fbff"))
 		rotor.add_theme_stylebox_override("normal", make_style(Color("285c7a"), Color("9be8df"), 52))
 		rotor.add_theme_stylebox_override("hover", make_style(Color("367c96"), Color("d2fffa"), 52))
+		board.add_child(rotor)
 		rotor.position = route_points[index] - Vector2(65, 65)
 		rotor.size = Vector2(130, 130)
 		rotor.pivot_offset = rotor.size * 0.5
 		# Keep every node out of its solved orientation at the start of a round.
 		rotations[index] = (int(TARGET_ROTATIONS[index]) + rotation_rng.randi_range(1, 3)) % 4
 		rotor.rotation = float(rotations[index]) * PI * 0.5
-		board.add_child(rotor)
 		rotor.pressed.connect(_on_rotor_pressed.bind(index, rotor))
 		var image := TextureRect.new()
 		image.layout_direction = Control.LAYOUT_DIRECTION_LTR
@@ -136,9 +137,9 @@ func build_interface() -> void:
 	launch_button.add_theme_color_override("font_color", Color("efffff"))
 	launch_button.add_theme_stylebox_override("normal", make_style(Color("3badae"), Color("8bd8d2"), 15))
 	launch_button.add_theme_stylebox_override("hover", make_style(Color("54c3c1"), Color("d4fffa"), 15))
+	board.add_child(launch_button)
 	launch_button.position = Vector2(876, 486)
 	launch_button.size = Vector2(190, 47)
-	board.add_child(launch_button)
 	launch_button.pressed.connect(_on_launch_pressed)
 
 func _on_rotor_pressed(index: int, rotor: Button) -> void:

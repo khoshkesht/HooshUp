@@ -9,15 +9,29 @@ var metrics: Array[Dictionary] = []
 var image_canvas: Control
 var source_image: Control
 
+static func choices_grid(parent: Control, node_name: String, rect: Rect2, columns := 1, gap := Vector2.ZERO) -> GridContainer:
+	var grid := GridContainer.new()
+	grid.name = node_name
+	grid.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grid.columns = columns
+	grid.add_theme_constant_override("h_separation", roundi(gap.x))
+	grid.add_theme_constant_override("v_separation", roundi(gap.y))
+	parent.add_child(grid)
+	ArtUiFrame.anchor(grid, rect, parent.size)
+	return grid
+
 static func mount(host: MobileUiRoot, artwork: Control, design: Vector2) -> MissionUiSurface:
 	var surface := MissionUiSurface.new()
 	surface.name = artwork.name + "Surface"
+	surface.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	host.add_child(surface)
 	surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	surface.design_size = design
 	var canvas := Control.new()
 	canvas.name = "ArtCanvas"
+	canvas.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.size = design
 	surface.add_child(canvas)
@@ -35,6 +49,7 @@ static func mount(host: MobileUiRoot, artwork: Control, design: Vector2) -> Miss
 static func mount_on_image(host: MobileUiRoot, artwork: Control, image: Control) -> MissionUiSurface:
 	var surface := MissionUiSurface.new()
 	surface.name = artwork.name + "Surface"
+	surface.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	host.add_child(surface)
 	surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

@@ -489,16 +489,9 @@ func show_tool_match_game(game_data: Dictionary) -> void:
 	var tools: Array = game_data.get("tools", [])
 	var tasks: Array = game_data.get("tasks", [])
 	var tool_buttons: Array[Button] = []
-	var choices_grid := GridContainer.new()
-	choices_grid.name = "ToolChoices"
-	choices_grid.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	choices_grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	choices_grid.columns = 2
-	choices_grid.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.40)
-	choices_grid.size = Vector2(chat.size.x * 0.74, chat.size.y * 0.27)
-	choices_grid.add_theme_constant_override("h_separation", roundi(chat.size.x * 0.02))
-	choices_grid.add_theme_constant_override("v_separation", roundi(chat.size.y * 0.03))
-	chat.add_child(choices_grid)
+	var choices_grid := MissionUiSurface.choices_grid(chat, "ToolChoices",
+		Rect2(chat.size * Vector2(0.16, 0.40), chat.size * Vector2(0.74, 0.27)),
+		2, chat.size * Vector2(0.02, 0.03))
 	for index in tools.size():
 		var tool: Dictionary = tools[index]
 		var button := MissionButton.new()
@@ -1203,7 +1196,7 @@ func show_choice_game(game_data: Dictionary) -> void:
 	game.name = "ChoiceGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	game.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	effects.add_child(game)
+	mission_ui_root.add_child(game)
 	game.size = level_image.size
 	await get_tree().process_frame
 
@@ -1228,6 +1221,9 @@ func show_choice_game(game_data: Dictionary) -> void:
 	feedback.size = Vector2(chat.size.x * 0.72, chat.size.y * 0.07)
 	chat.add_child(feedback)
 
+	var choices_grid := MissionUiSurface.choices_grid(chat, "AnswerChoices",
+		Rect2(chat.size * Vector2(0.16, 0.29), chat.size * Vector2(0.72, 0.42)),
+		1, Vector2(0, chat.size.y * 0.02))
 	var answer_buttons: Array[Button] = []
 	var choices: Array = game_data.get("choices", [])
 	var choice_font_size_offset := int(game_data.get("choice_font_size_offset", 0))
@@ -1243,10 +1239,11 @@ func show_choice_game(game_data: Dictionary) -> void:
 		button.add_theme_color_override("font_color", Color("ecf7ff"))
 		button.add_theme_stylebox_override("normal", make_choice_game_style(CHAT_BUTTON_COLOR, CHAT_BUTTON_BORDER_COLOR))
 		button.add_theme_stylebox_override("hover", make_choice_game_style(CHAT_BUTTON_HOVER_COLOR, CHAT_BUTTON_BORDER_COLOR))
-		button.position = Vector2(chat.size.x * 0.16, chat.size.y * (0.29 + 0.11 * index))
-		button.size = Vector2(chat.size.x * 0.72, chat.size.y * 0.09)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		button.clip_text = true
 		button.set_meta("choice_data", choice)
-		chat.add_child(button)
+		choices_grid.add_child(button)
 		answer_buttons.append(button)
 		button.pressed.connect(_on_choice_game_answer_pressed.bind(game, game_data, button, title, feedback, answer_buttons))
 	mount_mission_image_ui(game)
@@ -1256,7 +1253,7 @@ func show_presentation_path_game(game_data: Dictionary) -> void:
 	var game := PRESENTATION_PATH_GAME_SCRIPT.new() as PresentationPathGame
 	game.name = "PresentationPathGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	effects.add_child(game)
+	mission_ui_root.add_child(game)
 	game.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.size = PresentationPathGame.DESIGN_SIZE
 	game.center_board()
@@ -1328,9 +1325,9 @@ func show_response_comparison_game(game_data: Dictionary) -> void:
 	var game := Control.new()
 	game.name = "ResponseComparisonGame"
 	game.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game.mouse_filter = Control.MOUSE_FILTER_STOP
-	effects.add_child(game)
+	mission_ui_root.add_child(game)
+	game.size = PresentationPathGame.DESIGN_SIZE
 	await get_tree().process_frame
 
 	var dim := ColorRect.new()
@@ -1353,6 +1350,9 @@ func show_response_comparison_game(game_data: Dictionary) -> void:
 	title.size = Vector2(board.size.x * 0.80, board.size.y * 0.12)
 	board.add_child(title)
 
+	var choices_grid := MissionUiSurface.choices_grid(board, "ResponseChoices",
+		Rect2(board.size * Vector2(0.12, 0.23), board.size * Vector2(0.76, 0.61)),
+		1, Vector2(0, board.size.y * 0.05))
 	var response_buttons: Array[Button] = []
 	for index in (game_data.get("responses", []) as Array).size():
 		var response: Dictionary = (game_data.get("responses", []) as Array)[index] as Dictionary
@@ -1366,13 +1366,14 @@ func show_response_comparison_game(game_data: Dictionary) -> void:
 		button.add_theme_color_override("font_color", Color("ecf7ff"))
 		button.add_theme_stylebox_override("normal", make_choice_game_style(CHAT_BUTTON_COLOR, CHAT_BUTTON_BORDER_COLOR))
 		button.add_theme_stylebox_override("hover", make_choice_game_style(CHAT_BUTTON_HOVER_COLOR, CHAT_BUTTON_BORDER_COLOR))
-		button.position = Vector2(board.size.x * 0.12, board.size.y * (0.23 + 0.22 * index))
-		button.size = Vector2(board.size.x * 0.76, board.size.y * 0.17)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		button.clip_text = true
 		button.set_meta("response_id", str(response.get("id", "")))
-		board.add_child(button)
+		choices_grid.add_child(button)
 		response_buttons.append(button)
 		button.pressed.connect(_on_response_card_pressed.bind(game, button, response_buttons, title, game_data))
-	mount_mission_ui(game)
+	mount_mission_ui(game, PresentationPathGame.DESIGN_SIZE)
 	await game.tree_exited
 
 func _on_response_card_pressed(game: Control, button: Button, response_buttons: Array[Button], title: Label, game_data: Dictionary) -> void:
@@ -1457,6 +1458,9 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 	feedback.position = Vector2(chat.size.x * 0.16, chat.size.y * 0.39)
 	feedback.size = Vector2(chat.size.x * 0.74, chat.size.y * 0.09)
 	chat.add_child(feedback)
+	var choices_grid := MissionUiSurface.choices_grid(chat, "FinalChoices",
+		Rect2(chat.size * Vector2(0.16, 0.50), chat.size * Vector2(0.72, 0.28)),
+		1, Vector2(0, chat.size.y * 0.02))
 	var choices: Array[Button] = []
 	for index in (game_data.get("responses", []) as Array).size():
 		var response: Dictionary = (game_data.get("responses", []) as Array)[index] as Dictionary
@@ -1469,10 +1473,12 @@ func show_response_comparison_final_chat(game_data: Dictionary) -> void:
 		choice.add_theme_color_override("font_color", Color("f4f8ff"))
 		choice.add_theme_stylebox_override("normal", make_choice_game_style(CHAT_BUTTON_COLOR, CHAT_BUTTON_BORDER_COLOR))
 		choice.add_theme_stylebox_override("hover", make_choice_game_style(CHAT_BUTTON_HOVER_COLOR, CHAT_BUTTON_BORDER_COLOR))
-		choice.position = Vector2(chat.size.x * 0.16, chat.size.y * (0.50 + 0.10 * index))
-		choice.size = Vector2(chat.size.x * 0.72, chat.size.y * 0.08)
+		choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		choice.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		choice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		choice.clip_text = true
 		choice.set_meta("correct", bool(response.get("correct", false)))
-		chat.add_child(choice)
+		choices_grid.add_child(choice)
 		choices.append(choice)
 		choice.pressed.connect(_on_response_comparison_final_choice_pressed.bind(chat, choice, feedback, choices, game_data))
 	await chat.tree_exited
